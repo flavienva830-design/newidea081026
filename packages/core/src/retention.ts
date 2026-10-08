@@ -25,8 +25,12 @@ const LONG_DIGITS = /\d(?:[ .-]?\d){11,}/; // carte bancaire, NIR, n° de sécur
 const EMAIL = /[^\s@]+@[^\s@]+\.[^\s@]+/;
 const PHONE = /(?:\+33|0033|0)\s?[1-9](?:[ .-]?\d{2}){4}/;
 
+/** Plafond d'analyse : les champs conservés sont de toute façon bien plus courts, et cela borne le coût des expressions régulières. */
+const SCAN_LIMIT = 2_000;
+
 export function containsSensitiveIdentifier(v: string): boolean {
-  return IBAN.test(v) || LONG_DIGITS.test(v) || EMAIL.test(v) || PHONE.test(v);
+  const s = v.length > SCAN_LIMIT ? v.slice(0, SCAN_LIMIT) : v;
+  return IBAN.test(s) || LONG_DIGITS.test(s) || (s.includes("@") && EMAIL.test(s)) || PHONE.test(s);
 }
 
 const safeText = (max: number) => oneLine(max).refine((v) => !containsSensitiveIdentifier(v), "identifiant sensible interdit");
@@ -107,4 +111,17 @@ export function scrub(value: unknown, depth = 0): unknown {
     return Object.fromEntries(Object.entries(value as Record<string, unknown>).map(([k, v]) => [k, SENSITIVE_KEYS.test(k) ? "[masqué]" : scrub(v, depth + 1)]));
   }
   return value;
+}
+
+const MASK_PATTERNS: RegExp[] = [
+  /\b[A-Z]{2}\d{2}(?:[ ]?[A-Z0-9]{4}){2,7}(?:[ ]?[A-Z0-9]{1,3})?\b/g,
+  /[^\s@]+@[^\s@]+\.[^\s@]+/g,
+  /(?:\+33|0033|0)\s?[1-9](?:[ .-]?\d{2}){4}/g,
+  /\d(?:[ .-]?\d){11,}/g,
+];
+
+/** Masque les identifiants sensibles dans un texte destiné à l'affichage (résumé) : jamais d'IBAN ni de carte à l'écran. */
+export function maskSensitiveIdentifiers(text: string): string {
+  const bounded = text.length > SCAN_LIMIT ? text.slice(0, SCAN_LIMIT) : text;
+  return MASK_PATTERNS.reduce((t, re) => t.replace(re, "[masqué]"), bounded);
 }

@@ -30,7 +30,7 @@ export default async function DashboardPage() {
   const checklist = [
     { label: "Créer votre espace", done: true },
     { label: "Sécuriser le compte (double authentification)", done: user.twoFactorEnabled, href: "/app/settings/security" },
-    { label: "Ajouter votre premier document", done: data.documents > 0, soon: true },
+    { label: "Analyser votre premier document", done: data.documents > 0, href: "/app/analyze" },
     { label: "Inviter un proche", done: false, soon: true },
   ];
 

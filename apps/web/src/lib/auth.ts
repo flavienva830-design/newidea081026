@@ -6,9 +6,8 @@ import { nextCookies } from "better-auth/next-js";
 import { haveIBeenPwned } from "better-auth/plugins/haveibeenpwned";
 import { magicLink } from "better-auth/plugins/magic-link";
 import { twoFactor } from "better-auth/plugins/two-factor";
-import { MemoryStore, POLICIES, RateLimiter, hmac, parseKek, type RateLimitStore } from "@mon-agent-ia/core";
-import { Redis } from "ioredis";
-import { RedisStore } from "@mon-agent-ia/core";
+import { hmac, parseKek, type RateLimiter } from "@mon-agent-ia/core";
+import { limiters } from "./limiters";
 import { db } from "./db";
 import { env } from "./env";
 import { actionEmail, sendMail } from "./mailer";
@@ -16,31 +15,6 @@ import { provisionHousehold } from "@/server/household";
 import { clientInfo, recordLogin, verifyTurnstile } from "@/server/security";
 
 const MIN_PASSWORD = 12;
-
-function limiterStore(): RateLimitStore {
-  const url = env().REDIS_URL;
-  if (!url) return new MemoryStore();
-  const g = globalThis as unknown as { __redis?: Redis };
-  g.__redis ??= new Redis(url, { maxRetriesPerRequest: 2, enableOfflineQueue: false });
-  return new RedisStore(g.__redis);
-}
-
-type Limiters = Record<"loginIp" | "loginAccount" | "signupIp" | "magic" | "reset" | "totp", RateLimiter>;
-function limiters(): Limiters {
-  const g = globalThis as unknown as { __limiters?: Limiters };
-  if (!g.__limiters) {
-    const s = limiterStore();
-    g.__limiters = {
-      loginIp: new RateLimiter(s, POLICIES.loginByIp),
-      loginAccount: new RateLimiter(s, POLICIES.loginByAccount),
-      signupIp: new RateLimiter(s, POLICIES.signupByIp),
-      magic: new RateLimiter(s, POLICIES.magicLinkByEmail),
-      reset: new RateLimiter(s, POLICIES.passwordResetByEmail),
-      totp: new RateLimiter(s, POLICIES.totpByUser),
-    };
-  }
-  return g.__limiters;
-}
 
 const tooMany = (retry: number) =>
   new APIError("TOO_MANY_REQUESTS", { message: `Trop de tentatives. Réessayez dans ${retry} s.` });

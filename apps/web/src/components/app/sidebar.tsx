@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Bell, CalendarClock, FileText, Home, PenLine, PiggyBank, Settings, Sparkles, Users, type LucideIcon } from "lucide-react";
+import { Bell, CalendarClock, FileText, FileUp, Home, PenLine, PiggyBank, Settings, Sparkles, Users, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Logo } from "@/components/ui/logo";
@@ -9,6 +9,7 @@ import { cn } from "@/lib/cn";
 
 const NAV: { href: string; label: string; icon: LucideIcon; exact?: boolean }[] = [
   { href: "/app", label: "Tableau de bord", icon: Home, exact: true },
+  { href: "/app/analyze", label: "Analyser", icon: FileUp },
   { href: "/app/actions", label: "Actions", icon: Sparkles },
   { href: "/app/documents", label: "Documents", icon: FileText },
   { href: "/app/deadlines", label: "Échéances", icon: CalendarClock },
@@ -20,7 +21,7 @@ const NAV: { href: string; label: string; icon: LucideIcon; exact?: boolean }[] 
 ];
 
 /** Modules à venir : visibles mais explicitement signalés, jamais de page factice. */
-const SOON = new Set(["/app/actions", "/app/documents", "/app/deadlines", "/app/savings", "/app/letters", "/app/family", "/app/notifications"]);
+const SOON = new Set(["/app/letters", "/app/family", "/app/notifications"]);
 
 export function Sidebar() {
   const path = usePathname();

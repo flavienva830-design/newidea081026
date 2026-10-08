@@ -6,6 +6,7 @@ Assistant administratif IA pour particuliers et familles.
 - `legacy/` : première landing statique (référence de contenu, sera remplacée par `apps/web`).
 - `packages/db` : schéma Prisma, migrations, RLS Postgres, isolation par foyer.
 - `packages/core` : chiffrement d'enveloppe, RBAC, limitation de débit, validation de fichiers, risque de connexion, plans/quotas.
+- `packages/ai` : moteur d'analyse (extraction en mémoire PDF/DOCX/images, prompts versionnés, sortie JSON stricte, nettoyage, fournisseurs OpenAI et factice).
 - `packages/config` : validation de l'environnement.
 - `apps/web` : Next.js 15 (landing, authentification Better Auth avec double authentification, onboarding, tableau de bord, sécurité du compte).
 
@@ -28,6 +29,8 @@ pnpm build && pnpm start           # build de production
 pnpm test                          # unitaires + intégration (Postgres requis)
 pnpm test:e2e                      # Playwright (lance `pnpm start` ; PW_CHROMIUM pour un Chromium existant)
 ```
+
+Sans clé `OPENAI_API_KEY`, l'analyse utilise en développement un fournisseur factice déterministe (`AI_PROVIDER=fake`, interdit hors `APP_ENV=dev`). Avec une clé : `AI_PROVIDER=openai`.
 
 En développement, les emails (liens de vérification, de connexion) s'affichent dans la console du serveur.
 

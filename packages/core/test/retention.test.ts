@@ -51,6 +51,17 @@ describe("rétention minimale", () => {
   });
 });
 
+describe("performance face à des entrées hostiles", () => {
+  it("reste rapide sur des chaînes très longues (pas de backtracking quadratique)", () => {
+    const t0 = Date.now();
+    for (const v of ["x".repeat(100_000), "a@".repeat(50_000), "0 ".repeat(50_000), "FR76 ".repeat(20_000)]) {
+      containsSensitiveIdentifier(v);
+      scrub(v);
+    }
+    expect(Date.now() - t0).toBeLessThan(500);
+  });
+});
+
 describe("scrub (journaux et supervision)", () => {
   it("masque les clés de contenu et les longues chaînes", () => {
     const out = scrub({ userId: "u1", text: "Madame, Monsieur…", note: "a".repeat(200), nested: { password: "x", n: 3 } }) as Record<string, unknown>;

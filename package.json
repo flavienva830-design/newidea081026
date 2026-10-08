@@ -20,7 +20,10 @@
   "pnpm": {
     "overrides": {
       "mysql2": ">=3.22.0",
-      "deepmerge-ts": ">=8.0.0"
+      "deepmerge-ts": ">=8.0.0",
+      "next>postcss": "8.5.23",
+      "better-auth>vitest": "4.1.11",
+      "tinypool": ">=2.1.2"
     }
   }
 }

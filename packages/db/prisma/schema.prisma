@@ -152,6 +152,7 @@ enum InboundEmailStatus {
 }
 
 enum AiTask {
+  ANALYZE
   OCR
   CLASSIFY
   EXTRACT
@@ -481,6 +482,7 @@ model Deadline {
 
   reminders Reminder[]
 
+  @@unique([householdId, kind, dueDate, title])
   @@index([householdId, dueDate])
   @@index([householdId, status])
   @@map("deadlines")

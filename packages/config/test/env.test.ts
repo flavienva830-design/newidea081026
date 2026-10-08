@@ -42,6 +42,11 @@ describe("validation de l'environnement", () => {
     expect(() => loadEnv({ ...prod, E2E_OUTBOX: "1" })).toThrow(/E2E_OUTBOX/);
     expect(() => loadEnv({ ...dev, APP_ENV: "staging", E2E_OUTBOX: "1" })).toThrow(/E2E_OUTBOX/);
   });
+  it("le fournisseur d'IA factice est réservé au développement", () => {
+    expect(loadEnv({ ...dev, AI_PROVIDER: "fake" }).AI_PROVIDER).toBe("fake");
+    expect(() => loadEnv({ ...prod, AI_PROVIDER: "fake" })).toThrow(/AI_PROVIDER/);
+    expect(loadEnv({ ...prod, AI_PROVIDER: "openai" }).AI_MODEL_MINI).toBe("gpt-5-mini");
+  });
   it("production : tout est obligatoire", () => {
     expect(loadEnv(prod).APP_ENV).toBe("production");
     expect(() => loadEnv({ ...prod, STRIPE_SECRET_KEY: undefined })).toThrow(/STRIPE_SECRET_KEY/);

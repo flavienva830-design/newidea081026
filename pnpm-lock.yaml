@@ -7,6 +7,9 @@ settings:
 overrides:
   mysql2: '>=3.22.0'
   deepmerge-ts: '>=8.0.0'
+  next>postcss: 8.5.23
+  better-auth>vitest: 4.1.11
+  tinypool: '>=2.1.2'
 
 importers:
 
@@ -27,6 +30,9 @@ importers:
       '@fontsource-variable/inter':
         specifier: 5.3.0
         version: 5.3.0
+      '@mon-agent-ia/ai':
+        specifier: workspace:*
+        version: link:../../packages/ai
       '@mon-agent-ia/config':
         specifier: workspace:*
         version: link:../../packages/config
@@ -97,9 +103,46 @@ importers:
       '@types/react-dom':
         specifier: 19.3.0
         version: 19.3.0(@types/react@19.3.0)
+      pdf-lib:
+        specifier: ^1.17.1
+        version: 1.17.1
       tailwindcss:
         specifier: 4.3.3
         version: 4.3.3
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.0
+        version: 3.2.7(@types/node@22.20.5)(jiti@2.7.0)(lightningcss@1.32.0)
+
+  packages/ai:
+    dependencies:
+      '@mon-agent-ia/core':
+        specifier: workspace:*
+        version: link:../core
+      fflate:
+        specifier: ^0.8.2
+        version: 0.8.3
+      openai:
+        specifier: 7.30.0
+        version: 7.30.0(zod@4.6.5)
+      unpdf:
+        specifier: latest
+        version: 1.8.1
+      zod:
+        specifier: ^4.0.0
+        version: 4.6.5
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.20.5
+      '@vitest/coverage-v8':
+        specifier: ^3.2.0
+        version: 3.2.7(vitest@3.2.7(@types/node@22.20.5)(jiti@2.7.0)(lightningcss@1.32.0))
+      pdf-lib:
+        specifier: ^1.17.1
+        version: 1.17.1
       typescript:
         specifier: 5.9.3
         version: 5.9.3
@@ -725,6 +768,12 @@ packages:
     resolution: {integrity: sha512-eSYWTm620tTk45EKSedaUL8MFYI8hW164hIXsgIHyxu3VobUB3fFCu5t0hQby6OoWRPsG1KkKUG2M5UadiLiVg==}
     engines: {node: '>=14'}
 
+  '@pdf-lib/standard-fonts@1.0.0':
+    resolution: {integrity: sha512-hU30BK9IUN/su0Mn9VdlVKsWBS6GyhVfqjwl1FjZN4TxP6cCw0jP2w7V3Hf5uX7M0AZJ16vey9yE0ny7Sa59ZA==}
+
+  '@pdf-lib/upng@1.0.1':
+    resolution: {integrity: sha512-dQK2FUMQtowVP00mtIksrlZhdFXQZPC+taih1q4CvPZ5vqdxR/LKBaFg0oAfzd1GlHZXXSPdQfzQnt+ViGvEIQ==}
+
   '@pkgjs/parseargs@0.11.0':
     resolution: {integrity: sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==}
     engines: {node: '>=14'}
@@ -1334,7 +1383,7 @@ packages:
       react-dom: ^18.0.0 || ^19.0.0
       solid-js: ^1.0.0
       svelte: ^4.0.0 || ^5.0.0
-      vitest: ^2.0.0 || ^3.0.0 || ^4.0.0 || ^5.0.0
+      vitest: 4.1.11
       vue: ^3.0.0
     peerDependenciesMeta:
       '@lynx-js/react':
@@ -1628,6 +1677,9 @@ packages:
     peerDependenciesMeta:
       picomatch:
         optional: true
+
+  fflate@0.8.3:
+    resolution: {integrity: sha512-tbZNuJrLwGUp3zshBtdy4W+ORxZuIh8a5ilyIEQDC5rY1f3U20JMry0Ll3WBzU58EZKsEuJFXhb5gwv8CsPvgA==}
 
   find-my-way@9.7.0:
     resolution: {integrity: sha512-f2JHn75x2JlwUwLenZypgczR7YWMb/uO9BvUXtus+JMgkbIkLADd38cI4EiV+OQqrGo1Zlq6V8wnqMJ8e62wUQ==}
@@ -1935,6 +1987,30 @@ packages:
   ohash@2.0.12:
     resolution: {integrity: sha512-65S/5gk9YSsaRjcyf7Nfa6h/d3E8/1gslpXfI4W7Dxn/oap8IKRuNT5VXkLQ1YFKIEg4apRY4Pj6aiwFzrDdmw==}
 
+  openai@7.30.0:
+    resolution: {integrity: sha512-tvvcPdhS56B/79o0mJS5h4JndAov5Sz78T7CFl4gJ+C9S3GoSqHNLO6lG/8kdK+/c13zWEI97Srf66ar0V242g==}
+    engines: {node: '>=22.0.0'}
+    peerDependencies:
+      '@aws-sdk/credential-provider-node': '>=3.972.0 <4'
+      '@smithy/hash-node': '>=4.3.0 <5'
+      '@smithy/signature-v4': '>=5.4.0 <6'
+      undici: '>=5 <9'
+      ws: ^8.21.0
+      zod: ^3.25 || ^4.0
+    peerDependenciesMeta:
+      '@aws-sdk/credential-provider-node':
+        optional: true
+      '@smithy/hash-node':
+        optional: true
+      '@smithy/signature-v4':
+        optional: true
+      undici:
+        optional: true
+      ws:
+        optional: true
+      zod:
+        optional: true
+
   p-limit@2.3.0:
     resolution: {integrity: sha512-//88mFWSJx8lxCzwdAABTJL2MyWB12+eIY7MDL2SqLmAkeKU9qxRvWuSyTjm3FUmpBEMuFfckAIqEaVGUDxb6w==}
     engines: {node: '>=6'}
@@ -1949,6 +2025,9 @@ packages:
 
   package-json-from-dist@1.0.1:
     resolution: {integrity: sha512-UEZIS3/by4OC8vL3P2dTXRETpebLI2NiI5vIrjaD/5UtrkFX/tNbwjTSRAGC/+7CAo2pIcBaRgWmcBBHcsaCIw==}
+
+  pako@1.0.11:
+    resolution: {integrity: sha512-4hLB8Py4zZce5s4yd9XzopqwVv/yGNhV1Bl8NTmCq1763HeK2+EwVTv+leGeL13Dnh2wfbqowVPXCIO0z4taYw==}
 
   path-exists@4.0.0:
     resolution: {integrity: sha512-ak9Qy5Q7jYb2Wwcey5Fpvg2KoAc/ZIhLSLOSBmRmygPsGwkVVt0fZa0qrtMz+m6tJTAHfZQ8FnmB4MG4LWy7/w==}
@@ -1968,6 +2047,9 @@ packages:
   pathval@2.0.1:
     resolution: {integrity: sha512-//nshmD55c46FuFw26xV/xFAaB5HF9Xdap7HJBBnrKdAd6/GxDBaNA1870O79+9ueg61cZLSVc+OaFlfmObYVQ==}
     engines: {node: '>= 14.16'}
+
+  pdf-lib@1.17.1:
+    resolution: {integrity: sha512-V/mpyJAoTsN4cnP31vc0wfNA1+p20evqqnap0KLoRUN0Yk/p3wN52DOEsL4oBFcLdb76hlpKPtzJIgo67j/XLw==}
 
   perfect-debounce@2.1.0:
     resolution: {integrity: sha512-LjgdTytVFXeUgtHZr9WYViYSM/g8MkcTPYDlPa3cDqMirHjKiSZPYd6DoL7pK8AJQr+uWkQvCjHNdiMqsrJs+g==}
@@ -2033,8 +2115,8 @@ packages:
   postal-mime@2.7.6:
     resolution: {integrity: sha512-UUlyE2KlxmvwMGq060onF/VWU3zD6dVW31FwokQ5v26jWd35fbs2MoTFzh+jXnPwAyV2MULMKXcBInGOl5TO6Q==}
 
-  postcss@8.4.31:
-    resolution: {integrity: sha512-PS08Iboia9mts/2ygV3eLpY5ghnUcfLV/EXTOW1E2qYxJKGGBUtNjN76FYHnMs36RmARn41bC0AZmn+rR0OVpQ==}
+  postcss@8.5.23:
+    resolution: {integrity: sha512-g50586zr4bZmwFiTlflMu8E0bDTb5I5gertgwAKmsdUlTQIhZtunzUlD1WSzwcVWPoAVpsrA6vlfCD7oXvRwgg==}
     engines: {node: ^10 || ^12 || >=14}
 
   postcss@8.5.29:
@@ -2286,9 +2368,9 @@ packages:
     resolution: {integrity: sha512-wXR/dYpcqKmfWpEdZjiKJOwCNFndD0DMnrW/cYjVGttEkBfVgcLFHoNrlj47mjOVic9yyNu65alsgF4NQyTa2g==}
     engines: {node: '>=12.0.0'}
 
-  tinypool@1.1.1:
-    resolution: {integrity: sha512-Zba82s87IFq9A9XmjiX5uZA/ARWDrB03OHlq+Vw1fSdt0I+4/Kutwy8BP4Y/y/aORMo61FQ0vIb5j44vSo5Pkg==}
-    engines: {node: ^18.0.0 || >=20.0.0}
+  tinypool@2.2.0:
+    resolution: {integrity: sha512-jBrmx4lYmaC9k/mgPbylxs7kBUxHtD8256up+HjLaDFfXScKJQyil+SWXSvhAtT7XHo+yTVlpB81PGmHP8oLSQ==}
+    engines: {node: ^20.0.0 || >=22.0.0}
 
   tinyrainbow@2.0.0:
     resolution: {integrity: sha512-op4nsTR47R6p0vMUUoYl/a+ljLFVtlfaXkLQmqfLR1qHma1h/ysYk4hEXZ880bf2CYgTskvTa/e196Vd5dDQXw==}
@@ -2297,6 +2379,9 @@ packages:
   tinyspy@4.0.6:
     resolution: {integrity: sha512-u8KszXvGfU68hVcZpRHKG28T0krMuv2G5nDhiHaMLen/gIuFEgIJhaJuO69qjnXg5paSrbPMFfx3brNuN8eVSg==}
     engines: {node: '>=14.0.0'}
+
+  tslib@1.14.1:
+    resolution: {integrity: sha512-Xni35NKzjgMrwevysHTCArtLDpPvye8zV/0E4EyYn43P7/7qvQwPh9BGkHewbMulVntbigmcT7rdX3BNo9wRJg==}
 
   tslib@2.8.1:
     resolution: {integrity: sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w==}
@@ -2312,6 +2397,15 @@ packages:
 
   undici-types@6.21.0:
     resolution: {integrity: sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ==}
+
+  unpdf@1.8.1:
+    resolution: {integrity: sha512-xkURhy2SoGpOIH0a1gLHNkASPIQYonadDJs2AQwPEfUakafeD9EA1WTWWsaR++gfTCXJpV27W7tU1nXuk82UKQ==}
+    engines: {node: '>=22'}
+    peerDependencies:
+      '@napi-rs/canvas': ^0.1.69 || ^1.0.0
+    peerDependenciesMeta:
+      '@napi-rs/canvas':
+        optional: true
 
   valibot@1.4.2:
     resolution: {integrity: sha512-gjdCvJ6d3RyHAneqxMYMW9QMCwYMb3jpOO0IyHZV1bnRHFBHrX3VkIILt5XYR0WhwHiH7Mty8ovuPZ/O3gamrg==}
@@ -2792,6 +2886,14 @@ snapshots:
   '@noble/hashes@2.4.0': {}
 
   '@opentelemetry/semantic-conventions@1.43.0': {}
+
+  '@pdf-lib/standard-fonts@1.0.0':
+    dependencies:
+      pako: 1.0.11
+
+  '@pdf-lib/upng@1.0.1':
+    dependencies:
+      pako: 1.0.11
 
   '@pkgjs/parseargs@0.11.0':
     optional: true
@@ -3642,6 +3744,8 @@ snapshots:
     optionalDependencies:
       picomatch: 4.0.7
 
+  fflate@0.8.3: {}
+
   find-my-way@9.7.0:
     dependencies:
       fast-deep-equal: 3.1.3
@@ -3889,7 +3993,7 @@ snapshots:
       '@next/env': 15.5.27
       '@swc/helpers': 0.5.15
       caniuse-lite: 1.0.30001815
-      postcss: 8.4.31
+      postcss: 8.5.23
       react: 19.3.0
       react-dom: 19.3.0(react@19.3.0)
       styled-jsx: 5.1.6(react@19.3.0)
@@ -3911,6 +4015,10 @@ snapshots:
 
   ohash@2.0.12: {}
 
+  openai@7.30.0(zod@4.6.5):
+    optionalDependencies:
+      zod: 4.6.5
+
   p-limit@2.3.0:
     dependencies:
       p-try: 2.2.0
@@ -3922,6 +4030,8 @@ snapshots:
   p-try@2.2.0: {}
 
   package-json-from-dist@1.0.1: {}
+
+  pako@1.0.11: {}
 
   path-exists@4.0.0: {}
 
@@ -3935,6 +4045,13 @@ snapshots:
   pathe@2.0.3: {}
 
   pathval@2.0.1: {}
+
+  pdf-lib@1.17.1:
+    dependencies:
+      '@pdf-lib/standard-fonts': 1.0.0
+      '@pdf-lib/upng': 1.0.1
+      pako: 1.0.11
+      tslib: 1.14.1
 
   perfect-debounce@2.1.0: {}
 
@@ -3995,7 +4112,7 @@ snapshots:
 
   postal-mime@2.7.6: {}
 
-  postcss@8.4.31:
+  postcss@8.5.23:
     dependencies:
       nanoid: 3.3.20
       picocolors: 1.1.1
@@ -4255,11 +4372,13 @@ snapshots:
       fdir: 6.5.0(picomatch@4.0.7)
       picomatch: 4.0.7
 
-  tinypool@1.1.1: {}
+  tinypool@2.2.0: {}
 
   tinyrainbow@2.0.0: {}
 
   tinyspy@4.0.6: {}
+
+  tslib@1.14.1: {}
 
   tslib@2.8.1: {}
 
@@ -4275,6 +4394,8 @@ snapshots:
   typescript@5.9.3: {}
 
   undici-types@6.21.0: {}
+
+  unpdf@1.8.1: {}
 
   valibot@1.4.2(typescript@5.9.3):
     optionalDependencies:
@@ -4335,7 +4456,7 @@ snapshots:
       tinybench: 2.9.0
       tinyexec: 0.3.2
       tinyglobby: 0.2.17
-      tinypool: 1.1.1
+      tinypool: 2.2.0
       tinyrainbow: 2.0.0
       vite: 7.3.7(@types/node@22.20.5)(jiti@2.7.0)(lightningcss@1.32.0)
       vite-node: 3.2.4(@types/node@22.20.5)(jiti@2.7.0)(lightningcss@1.32.0)

@@ -17,7 +17,8 @@ run("isolation par foyer (RLS)", () => {
   beforeAll(async () => {
     admin = createDb(adminUrl!);
     app = createDb(appUrl!);
-    await admin.document.deleteMany();
+    // Uniquement SES lignes : d'autres suites s'exécutent en parallèle sur la même base (turbo).
+    await admin.document.deleteMany({ where: { householdId: { in: [A, B] } } });
     await admin.household.deleteMany({ where: { id: { in: [A, B] } } });
     await admin.user.deleteMany({ where: { id: { in: ["u-a", "u-b"] } } });
     await admin.user.createMany({

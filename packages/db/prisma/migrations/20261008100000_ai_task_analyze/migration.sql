@@ -1,0 +1,2 @@
+-- AlterEnum
+ALTER TYPE "AiTask" ADD VALUE IF NOT EXISTS 'ANALYZE';

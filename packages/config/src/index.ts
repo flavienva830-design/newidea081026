@@ -41,6 +41,12 @@ const schema = z.object({
   NEXT_PUBLIC_POSTHOG_KEY: z.string().optional(),
   // Vérification des mots de passe compromis (HIBP, k-anonymat). Ne peut être désactivée qu'hors production.
   HIBP_ENABLED: z.enum(["true", "false"]).default("true"),
+  // IA. « fake » : fournisseur déterministe, uniquement en APP_ENV=dev. Par défaut : openai si une clé existe, sinon fake (dev).
+  AI_PROVIDER: z.enum(["openai", "fake"]).optional(),
+  AI_MODEL_MINI: z.string().default("gpt-5-mini"),
+  AI_MODEL_FULL: z.string().default("gpt-5"),
+  /** JSON : {"gpt-5-mini":{"inPerMTok":…,"outPerMTok":…}} en micro-euros par million de tokens, d'après la grille officielle. */
+  AI_PRICING_JSON: z.string().optional(),
   // Boîte d'envoi de test (E2E) : n'existe qu'en APP_ENV=dev, jamais en staging ni en production.
   E2E_OUTBOX: z.literal("1").optional(),
 });
@@ -70,6 +76,7 @@ export function loadEnv(source: Record<string, string | undefined> = process.env
   }
   const env = parsed.data;
   const problems: string[] = [];
+  if (env.AI_PROVIDER === "fake" && env.APP_ENV !== "dev") problems.push("- AI_PROVIDER: « fake » est réservé à APP_ENV=dev");
   if (env.E2E_OUTBOX && env.APP_ENV !== "dev") problems.push("- E2E_OUTBOX: autorisé uniquement avec APP_ENV=dev");
 
   // Exigences strictes dès qu'on n'est plus en développement (staging et production tournent tous deux avec NODE_ENV=production).
