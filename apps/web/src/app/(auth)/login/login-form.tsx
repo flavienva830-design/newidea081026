@@ -16,6 +16,7 @@ export function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
   const next = safeNext(params.get("next"));
+  const invite = next.startsWith("/invite/"); // arrivée depuis un lien d'invitation à un foyer
   const [step, setStep] = useState<Step>("credentials");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -102,9 +103,10 @@ export function LoginForm() {
     <AuthShell
       title="Bon retour"
       subtitle="Connectez-vous à votre espace."
-      footer={<>Pas encore de compte ? <Link href="/signup" className="font-medium text-fg underline underline-offset-4">Créer mon espace</Link></>}
+      footer={<>Pas encore de compte ? <Link href={invite ? `/signup?next=${encodeURIComponent(next)}` : "/signup"} className="font-medium text-fg underline underline-offset-4">Créer mon espace</Link></>}
     >
       <form onSubmit={submitPassword} className="space-y-5" noValidate>
+        {invite && <Alert tone="info">Vous avez été invité(e) à rejoindre un foyer. Connectez-vous avec l'adresse email qui a reçu l'invitation, ou créez votre espace avec cette même adresse : vous reviendrez ensuite sur l'invitation.</Alert>}
         {info && <Alert tone="ok">{info}</Alert>}
         {error && <Alert>{error}</Alert>}
         <Field label="Adresse email" htmlFor="email"><Input id="email" type="email" autoComplete="email username" required value={email} onChange={(e) => setEmail(e.target.value)} /></Field>

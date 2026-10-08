@@ -7,7 +7,7 @@ import { db } from "@/lib/db";
 import { env } from "@/lib/env";
 import { isSameOrigin } from "@/lib/same-origin";
 import { billingConfigured, stripeClient } from "@/server/billing";
-import { resolveTenant } from "@/server/tenant";
+import { householdIdFromCookieHeader, resolveActiveTenant } from "@/server/tenant";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -19,7 +19,7 @@ export async function POST(req: Request) {
   if (!isSameOrigin(req, e.APP_URL)) return json({ error: "Origine refusée." }, 403);
   const session = await auth().api.getSession({ headers: req.headers });
   if (!session?.user.emailVerified) return json({ error: "Connexion requise." }, 401);
-  const tenant = await resolveTenant(db(), session.user.id);
+  const tenant = await resolveActiveTenant(db(), session.user.id, householdIdFromCookieHeader(req.headers.get("cookie")));
   if (!tenant) return json({ error: "Connexion requise." }, 401);
   if (!can(tenant.role, "billing:manage")) return json({ error: "Seul le propriétaire du foyer peut gérer l'abonnement." }, 403);
   if (!billingConfigured()) return json({ error: "Le paiement n'est pas encore disponible." }, 503);

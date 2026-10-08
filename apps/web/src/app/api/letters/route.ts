@@ -7,7 +7,7 @@ import { limiters } from "@/lib/limiters";
 import { isSameOrigin } from "@/lib/same-origin";
 import { aiRuntime } from "@/server/ai";
 import { generateLetter, type LetterError } from "@/server/letter-service";
-import { resolveTenant } from "@/server/tenant";
+import { householdIdFromCookieHeader, resolveActiveTenant } from "@/server/tenant";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -23,7 +23,7 @@ export async function POST(req: Request) {
   if (!isSameOrigin(req, e.APP_URL)) return json({ error: "Origine refusée." }, 403);
   const session = await auth().api.getSession({ headers: req.headers });
   if (!session?.user.emailVerified) return json({ error: "Connexion requise." }, 401);
-  const tenant = await resolveTenant(db(), session.user.id);
+  const tenant = await resolveActiveTenant(db(), session.user.id, householdIdFromCookieHeader(req.headers.get("cookie")));
   if (!tenant) return json({ error: "Connexion requise." }, 401);
 
   const lim = await limiters().api.check(`letters:${session.user.id}`);
