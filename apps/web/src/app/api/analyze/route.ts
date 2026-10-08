@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { scrub } from "@mon-agent-ia/core";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -7,14 +8,14 @@ import { limiters } from "@/lib/limiters";
 import { isSameOrigin } from "@/lib/same-origin";
 import { aiRuntime } from "@/server/ai";
 import { analyzeUpload, type AnalyzeError } from "@/server/analyze-service";
-import { resolveTenant } from "@/server/tenant";
+import { householdIdFromCookieHeader, resolveActiveTenant } from "@/server/tenant";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 const MAX_BYTES = 21 * 1024 * 1024; // un peu plus que la plus grande limite par type (20 Mo), enveloppe multipart comprise
-const STATUS: Record<AnalyzeError["code"], number> = { CONSENT: 403, QUOTA: 402, FORBIDDEN: 403, TOO_LARGE: 413, UNSUPPORTED: 415, EMPTY: 422, INVALID_OUTPUT: 422, PROVIDER_ERROR: 503 };
+const STATUS: Record<AnalyzeError["code"], number> = { CONSENT: 403, QUOTA: 402, FORBIDDEN: 403, TOO_LARGE: 413, UNSUPPORTED: 415, EMPTY: 422, INVALID_OUTPUT: 422, PROVIDER_ERROR: 503, PROFILE: 422 };
 const json = (body: unknown, status = 200) => NextResponse.json(body, { status, headers: { "cache-control": "no-store" } });
 
 /**
@@ -26,7 +27,7 @@ export async function POST(req: Request) {
 
   const session = await auth().api.getSession({ headers: req.headers });
   if (!session?.user.emailVerified) return json({ error: "Connexion requise." }, 401);
-  const tenant = await resolveTenant(db(), session.user.id);
+  const tenant = await resolveActiveTenant(db(), session.user.id, householdIdFromCookieHeader(req.headers.get("cookie"))); // foyer actif : cookie = préférence, appartenance vérifiée en base
   if (!tenant) return json({ error: "Connexion requise." }, 401);
 
   const lim = await limiters().upload.check(`upload:${tenant.householdId}`);
@@ -38,10 +39,18 @@ export async function POST(req: Request) {
   if (len > MAX_BYTES) return json({ error: "Ce fichier est trop volumineux." }, 413);
 
   let file: File | null = null;
+  let profileId: string | null = null;
   try {
     const form = await req.formData();
     const f = form.get("file");
     file = f instanceof File ? f : null;
+    // Personne concernée (facultatif) : un UUID ; son appartenance au foyer actif est vérifiée par le service.
+    const p = form.get("profileId");
+    if (typeof p === "string" && p !== "") {
+      const parsed = z.uuid().safeParse(p);
+      if (!parsed.success) return json({ error: "Profil invalide.", code: "PROFILE" }, 422);
+      profileId = parsed.data;
+    }
   } catch {
     return json({ error: "Requête invalide." }, 400);
   }
@@ -49,7 +58,7 @@ export async function POST(req: Request) {
 
   try {
     const bytes = new Uint8Array(await file.arrayBuffer());
-    const r = await analyzeUpload({ db: db(), ai: aiRuntime(), pepper: e.HASH_PEPPER }, tenant, { bytes } /* le type réel est détecté par les octets : le type déclaré par le navigateur n'est pas fiable */);
+    const r = await analyzeUpload({ db: db(), ai: aiRuntime(), pepper: e.HASH_PEPPER }, tenant, { bytes } /* le type réel est détecté par les octets : le type déclaré par le navigateur n'est pas fiable */, { profileId });
     if (!r.ok) return json({ error: r.error.message, code: r.error.code }, STATUS[r.error.code]);
     return json({
       ok: true,

@@ -23,7 +23,7 @@ export type PersistResult = {
  */
 export async function persistAnalysis(
   tx: Prisma.TransactionClient,
-  ctx: { householdId: string; userId: string; source: "WEB_UPLOAD" | "EMAIL" | "MOBILE"; now: Date },
+  ctx: { householdId: string; userId: string; source: "WEB_UPLOAD" | "EMAIL" | "MOBILE"; now: Date; /** Personne concernée (déjà vérifiée comme appartenant au foyer). */ profileId?: string | null },
   outcome: AnalysisOutcome,
 ): Promise<PersistResult> {
   const a = outcome.persistable;
@@ -31,7 +31,7 @@ export async function persistAnalysis(
 
   const doc = await tx.document.create({
     data: {
-      householdId, uploadedById: ctx.userId, source: ctx.source,
+      householdId, uploadedById: ctx.userId, source: ctx.source, profileId: ctx.profileId ?? null,
       kind: a.kind, title: a.title, organization: a.organization, amountCents: a.amountCents,
       documentDate: a.documentDate, urgencyScore: a.urgencyScore,
     },
