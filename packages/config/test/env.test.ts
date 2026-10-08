@@ -15,7 +15,7 @@ const prod = {
   DATABASE_SERVICE_URL: "postgresql://s:p@localhost:5432/db",
   REDIS_URL: "redis://localhost:6379",
   RESEND_API_KEY: "re_x", EMAIL_FROM: "Mon Agent IA <no-reply@monagentia.com>",
-  STRIPE_SECRET_KEY: "sk_live_x", STRIPE_WEBHOOK_SECRET: "whsec_x", OPENAI_API_KEY: "sk-x",
+  STRIPE_SECRET_KEY: "sk_live_x", STRIPE_WEBHOOK_SECRET: "whsec_x", STRIPE_PRICE_SOLO_MONTH: "p1", STRIPE_PRICE_SOLO_YEAR: "p2", STRIPE_PRICE_FAMILLE_MONTH: "p3", STRIPE_PRICE_FAMILLE_YEAR: "p4", OPENAI_API_KEY: "sk-x",
   TURNSTILE_SECRET_KEY: "t", SENTRY_DSN: "https://x@sentry.io/1",
 };
 

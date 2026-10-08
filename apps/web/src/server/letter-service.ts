@@ -4,6 +4,7 @@ import { withTenant, type Db } from "@mon-agent-ia/db";
 import { z } from "zod";
 import type { AiRuntime } from "./ai";
 import { audit } from "./audit";
+import { hasConsent } from "./consent";
 import { currentPlan } from "./plan";
 import { addAiCost, consumeLetterQuota, refundLetterQuota } from "./quota";
 import type { ActiveTenant } from "./tenant";
@@ -20,10 +21,11 @@ export const LetterRequest = z.object({
 });
 export type LetterRequest = z.infer<typeof LetterRequest>;
 
-export type LetterError = { code: "FORBIDDEN" | "UPGRADE" | "QUOTA" | "NOT_FOUND" | "INVALID" | "INVALID_OUTPUT" | "PROVIDER_ERROR"; message: string };
+export type LetterError = { code: "FORBIDDEN" | "CONSENT" | "UPGRADE" | "QUOTA" | "NOT_FOUND" | "INVALID" | "INVALID_OUTPUT" | "PROVIDER_ERROR"; message: string };
 export type LetterResult = { ok: true; subject: string; text: string; disclaimer: string } | { ok: false; error: LetterError };
 
 const MESSAGES: Record<LetterError["code"], string> = {
+  CONSENT: "Pour rédiger un courrier, vous devez autoriser le traitement par IA (Paramètres > Mes données).",
   FORBIDDEN: "Vous n'avez pas le droit de rédiger des courriers dans ce foyer.",
   UPGRADE: "La rédaction de courriers est incluse dans les offres Solo et Famille.",
   QUOTA: "Vous avez atteint le nombre de courriers inclus dans votre offre ce mois-ci.",
@@ -47,6 +49,7 @@ export async function generateLetter(deps: { db: Db; ai: AiRuntime; pepper: stri
   const period = usagePeriod(now);
 
   if (!["OWNER", "ADMIN", "WRITE"].includes(tenant.role)) return fail("FORBIDDEN");
+  if (!(await hasConsent(db, tenant.userId, ["AI_PROCESSING"]))) return fail("CONSENT");
   const parsed = LetterRequest.safeParse(raw);
   if (!parsed.success) return fail("INVALID");
   const req = parsed.data;

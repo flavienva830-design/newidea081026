@@ -28,6 +28,7 @@ run("rédaction de courriers sans conservation", () => {
     const householdId = randomUUID();
     const userId = `u-${householdId}`;
     await admin.user.create({ data: { id: userId, name: "T", email: `${userId}@t.test` } });
+    await admin.consent.createMany({ data: ["SENSITIVE_DATA_PROCESSING", "AI_PROCESSING"].map((type) => ({ userId, type: type as "AI_PROCESSING", granted: true, version: "test" })) });
     await admin.household.create({ data: { id: householdId, name: "T", wrappedDek: Buffer.from("x") } });
     await admin.membership.create({ data: { householdId, userId, role } });
     await admin.billingSubscription.create({ data: { householdId, stripeCustomerId: `cus_${householdId}`, plan, status: "ACTIVE" } });

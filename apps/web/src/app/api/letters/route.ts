@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 const MAX_BYTES = 20 * 1024;
-const STATUS: Record<LetterError["code"], number> = { FORBIDDEN: 403, UPGRADE: 402, QUOTA: 402, NOT_FOUND: 404, INVALID: 422, INVALID_OUTPUT: 422, PROVIDER_ERROR: 503 };
+const STATUS: Record<LetterError["code"], number> = { FORBIDDEN: 403, CONSENT: 403, UPGRADE: 402, QUOTA: 402, NOT_FOUND: 404, INVALID: 422, INVALID_OUTPUT: 422, PROVIDER_ERROR: 503 };
 const json = (body: unknown, status = 200) => NextResponse.json(body, { status, headers: { "cache-control": "no-store" } });
 
 /** Rédige un courrier. Rien n'est conservé : le texte n'existe que dans cette réponse. */

@@ -33,6 +33,9 @@ importers:
       '@mon-agent-ia/ai':
         specifier: workspace:*
         version: link:../../packages/ai
+      '@mon-agent-ia/billing':
+        specifier: workspace:*
+        version: link:../../packages/billing
       '@mon-agent-ia/config':
         specifier: workspace:*
         version: link:../../packages/config
@@ -121,6 +124,9 @@ importers:
 
   apps/worker:
     dependencies:
+      '@mon-agent-ia/billing':
+        specifier: workspace:*
+        version: link:../../packages/billing
       '@mon-agent-ia/config':
         specifier: workspace:*
         version: link:../../packages/config
@@ -180,6 +186,28 @@ importers:
       pdf-lib:
         specifier: ^1.17.1
         version: 1.17.1
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.0
+        version: 3.2.7(@types/node@22.20.5)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.23.15)
+
+  packages/billing:
+    dependencies:
+      '@mon-agent-ia/core':
+        specifier: workspace:*
+        version: link:../core
+      '@mon-agent-ia/db':
+        specifier: workspace:*
+        version: link:../db
+      stripe:
+        specifier: 23.0.0
+        version: 23.0.0(@types/node@22.20.5)
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.20.5
       typescript:
         specifier: 5.9.3
         version: 5.9.3
@@ -2450,6 +2478,15 @@ packages:
   strip-literal@3.1.0:
     resolution: {integrity: sha512-8r3mkIM/2+PpjHoOtiAW8Rg3jJLHaV7xPwG+YRGrv6FP0wwk/toTpATxWYOW0BKdWwl82VT2tFYi5DlROa0Mxg==}
 
+  stripe@23.0.0:
+    resolution: {integrity: sha512-MDE2A5ZVVluYURORaZEVghSmnLJc3w6aHAlZSxDQMsOjOb3V0O6ro/CiaeFlJS4N7uIVmsg98ocRsPmUK6YfyA==}
+    engines: {node: '>=20'}
+    peerDependencies:
+      '@types/node': '>=20'
+    peerDependenciesMeta:
+      '@types/node':
+        optional: true
+
   styled-jsx@5.1.6:
     resolution: {integrity: sha512-qSVyDTeMotdvQYoHWLNGwRFJHC+i+ZvdBRYosOFgC+Wg1vx4frN2/RG/NA7SYqqvKNLf39P2LSRA2pu6n0XYZA==}
     engines: {node: '>= 12.0.0'}
@@ -4527,6 +4564,10 @@ snapshots:
   strip-literal@3.1.0:
     dependencies:
       js-tokens: 9.0.1
+
+  stripe@23.0.0(@types/node@22.20.5):
+    optionalDependencies:
+      '@types/node': 22.20.5
 
   styled-jsx@5.1.6(react@19.3.0):
     dependencies:

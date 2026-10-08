@@ -42,6 +42,7 @@ run("analyse d'un document : persistance minimale, quotas, isolation", () => {
     const householdId = randomUUID();
     const userId = `u-${householdId}`;
     await admin.user.create({ data: { id: userId, name: "T", email: `${userId}@t.test` } });
+    await admin.consent.createMany({ data: ["SENSITIVE_DATA_PROCESSING", "AI_PROCESSING"].map((type) => ({ userId, type: type as "AI_PROCESSING", granted: true, version: "test" })) });
     await admin.household.create({ data: { id: householdId, name: "T", wrappedDek: Buffer.from("x") } });
     await admin.membership.create({ data: { householdId, userId, role } });
     if (plan) await admin.billingSubscription.create({ data: { householdId, stripeCustomerId: `cus_${householdId}`, plan, status: "ACTIVE" } });
@@ -140,6 +141,15 @@ run("analyse d'un document : persistance minimale, quotas, isolation", () => {
     expect((await admin.usageCounter.findFirstOrThrow({ where: { householdId: t.householdId } })).documents).toBe(0);
     expect(await admin.document.count({ where: { householdId: t.householdId } })).toBe(0);
     expect((await admin.aiRun.findFirstOrThrow({ where: { householdId: t.householdId } })).status).toBe("ERROR");
+  });
+
+  it("sans consentement actif (ou après retrait), aucune analyse n'est possible", async () => {
+    const t = await household();
+    await admin.consent.create({ data: { userId: t.userId, type: "AI_PROCESSING", granted: false, version: "test" } }); // retrait : dernière décision
+    expect(await analyze(t, await pdf(eur(letter("K"))))).toMatchObject({ ok: false, error: { code: "CONSENT" } });
+    expect(await admin.usageCounter.count({ where: { householdId: t.householdId } })).toBe(0); // rien consommé
+    await admin.consent.create({ data: { userId: t.userId, type: "AI_PROCESSING", granted: true, version: "test2", createdAt: new Date(Date.now() + 1000) } });
+    expect((await analyze(t, await pdf(eur(letter("K"))))).ok).toBe(true); // ré-accordé : redevient possible
   });
 
   it("un lecteur ne peut pas analyser de documents", async () => {

@@ -681,6 +681,8 @@ model BillingSubscription {
   cancelAtPeriodEnd    Boolean       @default(false)
   createdAt            DateTime      @default(now())
   updatedAt            DateTime      @updatedAt
+  // Horodatage du dernier événement Stripe appliqué : un événement plus ancien (arrivé en retard) est ignoré.
+  lastEventAt          DateTime?
 
   @@map("billing_subscriptions")
 }

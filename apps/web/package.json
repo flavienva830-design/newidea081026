@@ -32,7 +32,8 @@
     "zod": "^4.0.0",
     "@mon-agent-ia/ai": "workspace:*",
     "@mon-agent-ia/mail": "workspace:*",
-    "pdf-lib": "^1.17.1"
+    "pdf-lib": "^1.17.1",
+    "@mon-agent-ia/billing": "workspace:*"
   },
   "devDependencies": {
     "@playwright/test": "1.56.1",

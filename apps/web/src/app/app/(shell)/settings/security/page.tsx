@@ -15,7 +15,7 @@ export default async function SecurityPage() {
   ]);
 
   return (
-    <div className="mx-auto max-w-[760px] space-y-10">
+    <div className="space-y-10">
       <div><h1 className="display-md">Sécurité</h1><p className="mt-2 text-[15px] text-soft">Protégez l'accès à vos documents.</p></div>
 
       <MfaPanel enabled={user.twoFactorEnabled} />

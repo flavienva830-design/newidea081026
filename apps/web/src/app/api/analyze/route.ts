@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 const MAX_BYTES = 21 * 1024 * 1024; // un peu plus que la plus grande limite par type (20 Mo), enveloppe multipart comprise
-const STATUS: Record<AnalyzeError["code"], number> = { QUOTA: 402, FORBIDDEN: 403, TOO_LARGE: 413, UNSUPPORTED: 415, EMPTY: 422, INVALID_OUTPUT: 422, PROVIDER_ERROR: 503 };
+const STATUS: Record<AnalyzeError["code"], number> = { CONSENT: 403, QUOTA: 402, FORBIDDEN: 403, TOO_LARGE: 413, UNSUPPORTED: 415, EMPTY: 422, INVALID_OUTPUT: 422, PROVIDER_ERROR: 503 };
 const json = (body: unknown, status = 200) => NextResponse.json(body, { status, headers: { "cache-control": "no-store" } });
 
 /**

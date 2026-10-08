@@ -4,16 +4,18 @@ import { withTenant, type Db } from "@mon-agent-ia/db";
 import type { AiRuntime } from "./ai";
 import { audit } from "./audit";
 import { persistAnalysis, type PersistResult } from "./analysis-store";
+import { hasConsent } from "./consent";
 import { currentPlan } from "./plan";
 import { addAiCost, consumeDocumentQuota, refundDocumentQuota } from "./quota";
 import type { ActiveTenant } from "./tenant";
 
-export type AnalyzeError = { code: "QUOTA" | "UNSUPPORTED" | "TOO_LARGE" | "EMPTY" | "INVALID_OUTPUT" | "PROVIDER_ERROR" | "FORBIDDEN"; message: string };
+export type AnalyzeError = { code: "CONSENT" | "QUOTA" | "UNSUPPORTED" | "TOO_LARGE" | "EMPTY" | "INVALID_OUTPUT" | "PROVIDER_ERROR" | "FORBIDDEN"; message: string };
 export type AnalyzeResult = { ok: true; outcome: AnalysisOutcome; saved: PersistResult } | { ok: false; error: AnalyzeError };
 
 export type AnalyzeDeps = { db: Db; ai: AiRuntime; pepper: string; now?: () => Date };
 
 const MESSAGES: Record<AnalyzeError["code"], string> = {
+  CONSENT: "Pour analyser vos documents, vous devez autoriser leur traitement. Vous pouvez le faire dans Paramètres > Mes données.",
   QUOTA: "Vous avez atteint le nombre de documents inclus dans votre offre ce mois-ci.",
   UNSUPPORTED: "Ce fichier n'est pas pris en charge (PDF, JPEG, PNG ou Word).",
   TOO_LARGE: "Ce fichier est trop volumineux.",
@@ -39,6 +41,7 @@ export async function analyzeUpload(deps: AnalyzeDeps, tenant: ActiveTenant, fil
   const period = usagePeriod(now);
 
   if (!["OWNER", "ADMIN", "WRITE"].includes(tenant.role)) return fail("FORBIDDEN");
+  if (!(await hasConsent(db, tenant.userId, ["SENSITIVE_DATA_PROCESSING", "AI_PROCESSING"]))) return fail("CONSENT");
 
   // 1. Extraction locale.
   let parts;

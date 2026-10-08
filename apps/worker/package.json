@@ -16,7 +16,12 @@
     "@mon-agent-ia/mail": "workspace:*",
     "bullmq": "6.3.11",
     "ioredis": "latest",
-    "tsx": "latest"
+    "tsx": "latest",
+    "@mon-agent-ia/billing": "workspace:*"
   },
-  "devDependencies": { "@types/node": "^22.0.0", "typescript": "5.9.3", "vitest": "^3.2.0" }
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "5.9.3",
+    "vitest": "^3.2.0"
+  }
 }
