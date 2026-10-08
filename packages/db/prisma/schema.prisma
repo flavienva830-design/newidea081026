@@ -1,0 +1,902 @@
+// Mon Agent IA — schéma de données.
+//
+// Conventions
+//  - Toute table métier porte "householdId" : isolement strict par foyer (+ RLS Postgres, voir migrations).
+//  - Les contenus sensibles (texte intégral, corps de courriers, données extraites) sont chiffrés
+//    au niveau applicatif (enveloppe : clé de données par foyer) et stockés en Bytes.
+//  - Les tables d'authentification suivent les noms attendus par Better Auth.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ───────────────────────────── Enums ─────────────────────────────
+
+enum StaffRole {
+  NONE
+  SUPPORT
+  ADMIN
+}
+
+enum MembershipRole {
+  OWNER
+  ADMIN
+  WRITE
+  READ
+}
+
+enum ProfileRelation {
+  SELF
+  SPOUSE
+  CHILD
+  PARENT
+  OTHER
+}
+
+enum DocumentStatus {
+  UPLOADED
+  SCANNING
+  QUARANTINED
+  PROCESSING
+  READY
+  FAILED
+}
+
+enum DocumentSource {
+  WEB_UPLOAD
+  EMAIL
+  MOBILE
+}
+
+enum DocumentKind {
+  UNKNOWN
+  INVOICE
+  CONTRACT
+  TAX
+  INSURANCE
+  HEALTH
+  BANK_STATEMENT
+  UTILITY
+  TELECOM
+  OFFICIAL_LETTER
+  PAYSLIP
+  OTHER
+}
+
+enum OcrMethod {
+  NATIVE_TEXT
+  VISION_LLM
+  OCR_ENGINE
+}
+
+enum DeadlineKind {
+  PAYMENT
+  RENEWAL
+  CANCELLATION_NOTICE
+  TAX_FILING
+  RESPONSE_REQUIRED
+  OTHER
+}
+
+enum DeadlineStatus {
+  OPEN
+  DONE
+  DISMISSED
+  OVERDUE
+}
+
+enum ProvenanceSource {
+  AI
+  USER
+}
+
+enum NotificationChannel {
+  EMAIL
+  PUSH
+  IN_APP
+}
+
+enum ReminderStatus {
+  PENDING
+  SENT
+  CANCELLED
+  FAILED
+}
+
+enum SavingKind {
+  FORGOTTEN_SUBSCRIPTION
+  DUPLICATE
+  PRICE_INCREASE
+  COSTLY_INSURANCE
+  UNSUITED_PLAN
+  FEE
+  OTHER
+}
+
+enum SavingStatus {
+  DETECTED
+  ACCEPTED
+  DISMISSED
+  REALIZED
+}
+
+enum DetectedSubscriptionStatus {
+  ACTIVE
+  CANCELLED
+  UNKNOWN
+}
+
+enum BillingPeriod {
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  YEARLY
+}
+
+enum ActionType {
+  CANCEL_CONTRACT
+  CONTEST
+  REQUEST_REFUND
+  FOLLOW_UP
+  REPLY_REQUIRED
+  PAY_BEFORE
+  REVIEW_DOCUMENT
+  OTHER
+}
+
+enum ActionStatus {
+  PROPOSED
+  ACCEPTED
+  IN_PROGRESS
+  DONE
+  DISMISSED
+  EXPIRED
+}
+
+enum LetterKind {
+  CANCELLATION
+  CONTESTATION
+  COMPLAINT
+  REFUND_REQUEST
+  FORMAL_NOTICE
+  FREE
+}
+
+// Un courrier n'est jamais envoyé sans passer par VALIDATED (validation explicite de l'utilisateur).
+enum LetterStatus {
+  DRAFT
+  VALIDATED
+  SENT
+  CANCELLED
+}
+
+enum LetterChannel {
+  PDF_EXPORT
+  EMAIL
+  REGISTERED_EMAIL
+  POSTAL
+}
+
+enum InboundEmailStatus {
+  RECEIVED
+  PROCESSED
+  REJECTED
+  FAILED
+}
+
+enum AiTask {
+  OCR
+  CLASSIFY
+  EXTRACT
+  SUMMARIZE
+  DEADLINES
+  SAVINGS
+  LETTER
+  AGENT
+}
+
+enum AiRunStatus {
+  OK
+  INVALID_OUTPUT
+  ERROR
+  REFUSED
+}
+
+enum PlanTier {
+  FREE
+  SOLO
+  FAMILLE
+}
+
+enum BillingStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  INCOMPLETE
+  UNPAID
+}
+
+enum ConsentType {
+  TERMS
+  PRIVACY
+  SENSITIVE_DATA_PROCESSING
+  AI_PROCESSING
+  MARKETING_EMAIL
+}
+
+enum RequestStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+// ──────────────────── Authentification (Better Auth) ────────────────────
+
+model User {
+  id               String   @id
+  name             String
+  email            String   @unique
+  emailVerified    Boolean  @default(false)
+  image            String?
+  twoFactorEnabled Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  locale              String    @default("fr")
+  timezone            String    @default("Europe/Paris")
+  staffRole           StaffRole @default(NONE)
+  onboardingStep      Int       @default(0)
+  onboardedAt         DateTime?
+  lastLoginAt         DateTime?
+  bannedAt            DateTime?
+  deletionRequestedAt DateTime?
+
+  sessions                Session[]
+  accounts                Account[]
+  twoFactors              TwoFactor[]
+  loginEvents             LoginEvent[]
+  memberships             Membership[]
+  notifications           Notification[]
+  notificationPreferences NotificationPreference[]
+  pushSubscriptions       PushSubscription[]
+  consents                Consent[]
+  exportRequests          DataExportRequest[]
+  deletionRequests        DeletionRequest[]
+
+  @@map("users")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@unique([providerId, accountId])
+  @@index([userId])
+  @@map("accounts")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verifications")
+}
+
+model TwoFactor {
+  id          String @id
+  secret      String
+  backupCodes String
+  userId      String
+  user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("two_factors")
+}
+
+// Journal des connexions : base de la détection de connexions suspectes.
+model LoginEvent {
+  id          String   @id @default(uuid(7)) @db.Uuid
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  emailHash   String // HMAC de l'email tenté (permet la corrélation sans stocker l'adresse d'un inconnu)
+  success     Boolean
+  method      String // password | magic_link | google | totp | backup_code
+  failReason  String?
+  ipHash      String
+  ipPrefix    String? // /24 ou /48 tronqué, pour la détection de changement de zone
+  country     String?
+  userAgent   String?
+  deviceHash  String?
+  suspicious  Boolean  @default(false)
+  riskReasons String[]
+  createdAt   DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([emailHash, createdAt])
+  @@index([ipHash, createdAt])
+  @@map("login_events")
+}
+
+// ───────────────────────────── Foyer ─────────────────────────────
+
+model Household {
+  id           String    @id @default(uuid(7)) @db.Uuid
+  name         String
+  // Clé de chiffrement de données (DEK) du foyer, chiffrée par la clé maître (KMS / KEK).
+  wrappedDek   Bytes
+  kekVersion   Int       @default(1)
+  inboundAlias String?   @unique // partie locale de l'adresse email personnelle
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+
+  memberships           Membership[]
+  invitations           Invitation[]
+  profiles              Profile[]
+  documents             Document[]
+  tags                  Tag[]
+  deadlines             Deadline[]
+  detectedSubscriptions DetectedSubscription[]
+  savings               Saving[]
+  actions               RecommendedAction[]
+  letters               Letter[]
+  notifications         Notification[]
+  inboundEmails         InboundEmail[]
+  aiRuns                AiRun[]
+  billing               BillingSubscription?
+  usage                 UsageCounter[]
+
+  @@map("households")
+}
+
+model Membership {
+  id          String         @id @default(uuid(7)) @db.Uuid
+  householdId String         @db.Uuid
+  household   Household      @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role        MembershipRole
+  createdAt   DateTime       @default(now())
+
+  @@unique([householdId, userId])
+  @@index([userId])
+  @@map("memberships")
+}
+
+model Invitation {
+  id          String         @id @default(uuid(7)) @db.Uuid
+  householdId String         @db.Uuid
+  household   Household      @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  email       String
+  role        MembershipRole
+  tokenHash   String         @unique // seul le hash est stocké
+  invitedById String
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  revokedAt   DateTime?
+  createdAt   DateTime       @default(now())
+
+  @@index([householdId])
+  @@index([email])
+  @@map("invitations")
+}
+
+// Profil géré dans un foyer (peut ne pas avoir de compte : enfant, parent âgé…).
+// Plan Famille : jusqu'à 5 profils.
+model Profile {
+  id          String          @id @default(uuid(7)) @db.Uuid
+  householdId String          @db.Uuid
+  household   Household       @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  userId      String?
+  displayName String
+  relation    ProfileRelation
+  birthYear   Int?
+  createdAt   DateTime        @default(now())
+  archivedAt  DateTime?
+
+  documents Document[]
+
+  @@unique([householdId, userId])
+  @@index([householdId])
+  @@map("profiles")
+}
+
+// ─────────────────────────── Documents ───────────────────────────
+
+model Document {
+  id             String         @id @default(uuid(7)) @db.Uuid
+  householdId    String         @db.Uuid
+  household      Household      @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  profileId      String?        @db.Uuid
+  profile        Profile?       @relation(fields: [profileId], references: [id], onDelete: SetNull)
+  uploadedById   String?
+  source         DocumentSource
+  inboundEmailId String?        @db.Uuid
+  status         DocumentStatus @default(UPLOADED)
+  kind           DocumentKind   @default(UNKNOWN)
+  title          String
+  organization   String?
+  summary        String?
+  urgencyScore   Int? // 0..100
+  amountCents    Int?
+  currency       String?        @default("EUR")
+  documentDate   DateTime?
+  failureReason  String?
+  currentVersion Int            @default(1)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  deletedAt      DateTime?
+
+  versions     DocumentVersion[]
+  text         DocumentText?
+  extractions  Extraction[]
+  tags         DocumentTag[]
+  deadlines    Deadline[]
+  savings      Saving[]
+  actions      RecommendedAction[]
+  letters      Letter[]
+  aiRuns       AiRun[]
+  inboundEmail InboundEmail?       @relation(fields: [inboundEmailId], references: [id], onDelete: SetNull)
+
+  @@index([householdId, createdAt])
+  @@index([householdId, kind])
+  @@index([householdId, status])
+  @@map("documents")
+}
+
+model DocumentVersion {
+  id           String   @id @default(uuid(7)) @db.Uuid
+  householdId  String   @db.Uuid
+  documentId   String   @db.Uuid
+  document     Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  version      Int
+  storageKey   String   @unique // chemin dans le stockage ; le nom d'origine n'est jamais utilisé
+  originalName String
+  mimeType     String
+  sizeBytes    Int
+  sha256       String
+  scanStatus   String   @default("pending") // pending | clean | infected | error
+  createdById  String?
+  createdAt    DateTime @default(now())
+
+  @@unique([documentId, version])
+  @@index([householdId, sha256])
+  @@map("document_versions")
+}
+
+// Texte intégral (chiffré) extrait du document.
+model DocumentText {
+  id          String    @id @default(uuid(7)) @db.Uuid
+  householdId String    @db.Uuid
+  documentId  String    @unique @db.Uuid
+  document    Document  @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  version     Int
+  textEnc     Bytes
+  method      OcrMethod
+  language    String?
+  pageCount   Int?
+  createdAt   DateTime  @default(now())
+
+  @@index([householdId])
+  @@map("document_texts")
+}
+
+model Tag {
+  id          String        @id @default(uuid(7)) @db.Uuid
+  householdId String        @db.Uuid
+  household   Household     @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  name        String
+  system      Boolean       @default(false) // tag posé par l'IA
+  documents   DocumentTag[]
+
+  @@unique([householdId, name])
+  @@map("tags")
+}
+
+model DocumentTag {
+  documentId  String   @db.Uuid
+  tagId       String   @db.Uuid
+  householdId String   @db.Uuid
+  document    Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  tag         Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([documentId, tagId])
+  @@index([householdId])
+  @@map("document_tags")
+}
+
+// Données structurées extraites par l'IA (chiffrées), validées par schéma.
+model Extraction {
+  id            String   @id @default(uuid(7)) @db.Uuid
+  householdId   String   @db.Uuid
+  documentId    String   @db.Uuid
+  document      Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  version       Int
+  schemaVersion String
+  dataEnc       Bytes
+  confidence    Float?
+  aiRunId       String?  @db.Uuid
+  createdAt     DateTime @default(now())
+
+  @@index([householdId, documentId])
+  @@map("extractions")
+}
+
+// ─────────────────────────── Échéances ───────────────────────────
+
+model Deadline {
+  id          String           @id @default(uuid(7)) @db.Uuid
+  householdId String           @db.Uuid
+  household   Household        @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  documentId  String?          @db.Uuid
+  document    Document?        @relation(fields: [documentId], references: [id], onDelete: SetNull)
+  kind        DeadlineKind
+  title       String
+  dueDate     DateTime
+  amountCents Int?
+  currency    String?          @default("EUR")
+  status      DeadlineStatus   @default(OPEN)
+  source      ProvenanceSource @default(AI)
+  confidence  Float?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  reminders Reminder[]
+
+  @@index([householdId, dueDate])
+  @@index([householdId, status])
+  @@map("deadlines")
+}
+
+model Reminder {
+  id          String              @id @default(uuid(7)) @db.Uuid
+  householdId String              @db.Uuid
+  deadlineId  String              @db.Uuid
+  deadline    Deadline            @relation(fields: [deadlineId], references: [id], onDelete: Cascade)
+  channel     NotificationChannel
+  remindAt    DateTime
+  status      ReminderStatus      @default(PENDING)
+  sentAt      DateTime?
+  attempts    Int                 @default(0)
+
+  @@index([status, remindAt])
+  @@index([householdId])
+  @@map("reminders")
+}
+
+// ───────────────────── Abonnements détectés & économies ─────────────────────
+
+model DetectedSubscription {
+  id           String                     @id @default(uuid(7)) @db.Uuid
+  householdId  String                     @db.Uuid
+  household    Household                  @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  organization String
+  label        String?
+  amountCents  Int
+  currency     String                     @default("EUR")
+  period       BillingPeriod
+  status       DetectedSubscriptionStatus @default(UNKNOWN)
+  firstSeenAt  DateTime?
+  lastSeenAt   DateTime?
+  renewalDate  DateTime?
+  noticeDays   Int?
+  createdAt    DateTime                   @default(now())
+  updatedAt    DateTime                   @updatedAt
+
+  savings Saving[]
+
+  @@index([householdId, status])
+  @@map("detected_subscriptions")
+}
+
+model Saving {
+  id             String                @id @default(uuid(7)) @db.Uuid
+  householdId    String                @db.Uuid
+  household      Household             @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  documentId     String?               @db.Uuid
+  document       Document?             @relation(fields: [documentId], references: [id], onDelete: SetNull)
+  subscriptionId String?               @db.Uuid
+  subscription   DetectedSubscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+  kind           SavingKind
+  title          String
+  rationale      String
+  monthlyCents   Int
+  annualCents    Int
+  confidence     Float
+  priority       Int                   @default(0)
+  status         SavingStatus          @default(DETECTED)
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+
+  actions RecommendedAction[]
+
+  @@index([householdId, status, priority])
+  @@map("savings")
+}
+
+// ─────────────── Agent proactif : actions recommandées ───────────────
+
+model RecommendedAction {
+  id          String       @id @default(uuid(7)) @db.Uuid
+  householdId String       @db.Uuid
+  household   Household    @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  type        ActionType
+  title       String
+  rationale   String
+  priority    Int          @default(0)
+  status      ActionStatus @default(PROPOSED)
+  documentId  String?      @db.Uuid
+  document    Document?    @relation(fields: [documentId], references: [id], onDelete: SetNull)
+  savingId    String?      @db.Uuid
+  saving      Saving?      @relation(fields: [savingId], references: [id], onDelete: SetNull)
+  dedupeKey   String // évite de reproposer la même action
+  aiRunId     String?      @db.Uuid
+  expiresAt   DateTime?
+  resolvedAt  DateTime?
+  createdAt   DateTime     @default(now())
+
+  letters Letter[]
+
+  @@unique([householdId, dedupeKey])
+  @@index([householdId, status, priority])
+  @@map("recommended_actions")
+}
+
+// ───────────────────────────── Courriers ─────────────────────────────
+
+model Letter {
+  id            String             @id @default(uuid(7)) @db.Uuid
+  householdId   String             @db.Uuid
+  household     Household          @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  documentId    String?            @db.Uuid
+  document      Document?          @relation(fields: [documentId], references: [id], onDelete: SetNull)
+  actionId      String?            @db.Uuid
+  action        RecommendedAction? @relation(fields: [actionId], references: [id], onDelete: SetNull)
+  kind          LetterKind
+  status        LetterStatus       @default(DRAFT)
+  subject       String
+  bodyEnc       Bytes
+  recipientEnc  Bytes?
+  pdfKey        String?
+  createdById   String?
+  validatedById String?
+  validatedAt   DateTime?
+  sentAt        DateTime?
+  sentVia       LetterChannel?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  @@index([householdId, status])
+  @@map("letters")
+}
+
+// ─────────────────────────── Notifications ───────────────────────────
+
+model Notification {
+  id          String     @id @default(uuid(7)) @db.Uuid
+  userId      String
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  householdId String?    @db.Uuid
+  household   Household? @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  type        String // new_document | new_deadline | letter_generated | saving_detected | ...
+  title       String
+  body        String?
+  data        Json?
+  readAt      DateTime?
+  createdAt   DateTime   @default(now())
+
+  @@index([userId, readAt, createdAt])
+  @@map("notifications")
+}
+
+model NotificationPreference {
+  id      String              @id @default(uuid(7)) @db.Uuid
+  userId  String
+  user    User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type    String
+  channel NotificationChannel
+  enabled Boolean             @default(true)
+
+  @@unique([userId, type, channel])
+  @@map("notification_preferences")
+}
+
+model PushSubscription {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("push_subscriptions")
+}
+
+// ───────────────────────────── Email entrant ─────────────────────────────
+
+model InboundEmail {
+  id                String             @id @default(uuid(7)) @db.Uuid
+  householdId       String             @db.Uuid
+  household         Household          @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  providerMessageId String
+  fromDomain        String?
+  subject           String?
+  status            InboundEmailStatus @default(RECEIVED)
+  rejectReason      String?
+  attachmentCount   Int                @default(0)
+  receivedAt        DateTime           @default(now())
+
+  documents Document[]
+
+  @@unique([householdId, providerMessageId])
+  @@map("inbound_emails")
+}
+
+// ───────────────────────── IA : traçabilité & coûts ─────────────────────────
+
+model AiRun {
+  id            String      @id @default(uuid(7)) @db.Uuid
+  householdId   String?     @db.Uuid
+  household     Household?  @relation(fields: [householdId], references: [id], onDelete: SetNull)
+  documentId    String?     @db.Uuid
+  document      Document?   @relation(fields: [documentId], references: [id], onDelete: SetNull)
+  task          AiTask
+  model         String
+  promptVersion String
+  inputTokens   Int         @default(0)
+  outputTokens  Int         @default(0)
+  costMicros    BigInt      @default(0) // micro-euros
+  latencyMs     Int         @default(0)
+  status        AiRunStatus
+  error         String?
+  createdAt     DateTime    @default(now())
+
+  @@index([householdId, createdAt])
+  @@index([task, createdAt])
+  @@map("ai_runs")
+}
+
+// ───────────────────────── Facturation (Stripe) ─────────────────────────
+
+model BillingSubscription {
+  id                   String        @id @default(uuid(7)) @db.Uuid
+  householdId          String        @unique @db.Uuid
+  household            Household     @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  stripeCustomerId     String        @unique
+  stripeSubscriptionId String?       @unique
+  plan                 PlanTier      @default(FREE)
+  status               BillingStatus @default(ACTIVE)
+  interval             String? // month | year
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean       @default(false)
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+
+  @@map("billing_subscriptions")
+}
+
+// Idempotence des webhooks Stripe : un événement n'est traité qu'une fois.
+model StripeEvent {
+  id          String    @id // identifiant d'événement Stripe
+  type        String
+  receivedAt  DateTime  @default(now())
+  processedAt DateTime?
+  error       String?
+
+  @@map("stripe_events")
+}
+
+model UsageCounter {
+  id           String    @id @default(uuid(7)) @db.Uuid
+  householdId  String    @db.Uuid
+  household    Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  period       String // AAAA-MM
+  documents    Int       @default(0)
+  aiCostMicros BigInt    @default(0)
+
+  @@unique([householdId, period])
+  @@map("usage_counters")
+}
+
+// ───────────────────── Conformité : audit, consentement, RGPD ─────────────────────
+
+// Journal d'audit en ajout seul (UPDATE/DELETE interdits par trigger, voir migration).
+model AuditLog {
+  id          String   @id @default(uuid(7)) @db.Uuid
+  actorId     String?
+  householdId String?  @db.Uuid
+  action      String
+  targetType  String?
+  targetId    String?
+  ipHash      String?
+  userAgent   String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  @@index([householdId, createdAt])
+  @@index([actorId, createdAt])
+  @@index([action, createdAt])
+  @@map("audit_logs")
+}
+
+model Consent {
+  id        String      @id @default(uuid(7)) @db.Uuid
+  userId    String
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      ConsentType
+  version   String
+  granted   Boolean
+  ipHash    String?
+  createdAt DateTime    @default(now())
+
+  @@index([userId, type, createdAt])
+  @@map("consents")
+}
+
+model DataExportRequest {
+  id          String        @id @default(uuid(7)) @db.Uuid
+  userId      String
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status      RequestStatus @default(PENDING)
+  archiveKey  String?
+  expiresAt   DateTime?
+  createdAt   DateTime      @default(now())
+  completedAt DateTime?
+
+  @@map("data_export_requests")
+}
+
+model DeletionRequest {
+  id           String        @id @default(uuid(7)) @db.Uuid
+  userId       String
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status       RequestStatus @default(PENDING)
+  scheduledFor DateTime // délai de rétractation avant purge définitive
+  createdAt    DateTime      @default(now())
+  completedAt  DateTime?
+
+  @@map("deletion_requests")
+}

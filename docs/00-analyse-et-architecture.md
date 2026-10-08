@@ -56,6 +56,11 @@ Les choix du brief sont conservés sauf quand ils posent un problème réel. Les
 
 ---
 
+### Mise à jour (phase 1)
+- **D2 affiné : Better Auth au lieu d'Auth.js v5.** Auth.js v5 est toujours en bêta et n'offre ni MFA ni anti-abus intégrés ; son équipe est désormais rattachée à Better Auth. Better Auth fournit la 2FA TOTP, les liens magiques, les sessions par appareil et la limitation de débit, avec nos données dans notre base UE. Le principe validé (identités dans notre base européenne, pas de Clerk) est conservé.
+- **Rôles Postgres** : `mai_app` (soumis à la RLS), `mai_service` (worker, webhooks, admin) et le propriétaire (migrations seulement).
+- **Quota Famille** : le brief ne fixe pas de plafond documentaire ; 1 000 documents/mois par foyer retenus provisoirement.
+
 ## 3. Architecture système
 
 ```

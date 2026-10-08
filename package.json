@@ -1,0 +1,26 @@
+{
+  "name": "mon-agent-ia",
+  "private": true,
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "db:generate": "pnpm --filter @mon-agent-ia/db generate",
+    "db:migrate": "pnpm --filter @mon-agent-ia/db migrate:deploy"
+  },
+  "devDependencies": {
+    "turbo": "2.11.7",
+    "typescript": "5.9.3"
+  },
+  "pnpm": {
+    "overrides": {
+      "mysql2": ">=3.22.0",
+      "deepmerge-ts": ">=8.0.0"
+    }
+  }
+}
