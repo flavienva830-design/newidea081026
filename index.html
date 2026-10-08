@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mon Agent IA — Votre administratif, géré pour vous</title>
+<meta name="description" content="Mon Agent IA lit vos courriers, factures et contrats, suit vos échéances, rédige vos réponses et repère l'argent perdu. Dès 9,90 €/mois.">
+<meta property="og:title" content="Mon Agent IA">
+<meta property="og:description" content="Votre administratif, géré pour vous par un agent IA.">
+<meta property="og:type" content="website">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap">
+    <a class="logo" href="#top" aria-label="Mon Agent IA">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="#0c0a09" aria-hidden="true"><path d="M12 1l2.6 7.4L22 11l-7.4 2.6L12 21l-2.6-7.4L2 11l7.4-2.6z"/></svg>
+      Mon Agent IA
+    </a>
+    <nav class="nav-links" aria-label="Navigation principale">
+      <a href="#fonctions">Fonctions</a>
+      <a href="#essai">Essayer</a>
+      <a href="#tarifs">Tarifs</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+    <div class="nav-right">
+      <a class="btn" href="#inscription">Se connecter</a>
+      <a class="btn btn-primary" href="#tarifs">Essai gratuit</a>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+<section class="hero">
+  <div class="wrap">
+    <h1>L'administratif, enfin <span class="hl">géré pour vous</span>.</h1>
+    <p class="lead">Transférez un courrier, une facture ou un contrat. Votre agent IA le lit, note les échéances, rédige la réponse et repère l'argent que vous perdez sans le savoir.</p>
+    <div class="cta-row">
+      <a class="btn btn-primary" href="#tarifs">Commencer gratuitement</a>
+      <a class="btn" href="#essai">Essayer avec un document</a>
+    </div>
+    <div class="proof">
+      <span class="stars" aria-label="Pensé pour les particuliers"><b>Pensé pour les particuliers et les familles</b></span>
+      <span>Hébergement en Europe</span>
+      <span>Vos documents ne sont jamais revendus</span>
+      <span>Sans engagement</span>
+    </div>
+
+    <div class="preview-wrap">
+      <svg class="mascot" viewBox="0 0 96 96" fill="none" stroke="#0c0a09" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M18 92V56C18 30 32 14 48 14s30 16 30 42v36" fill="#fff"/>
+        <path d="M30 56c0-14 8-24 18-24s18 10 18 24c0 12-8 20-18 20s-18-8-18-20z" fill="#fafaf9"/>
+        <circle cx="41" cy="54" r="2.5" fill="#0c0a09"/><circle cx="55" cy="54" r="2.5" fill="#0c0a09"/>
+        <path d="M43 63c3 2.5 7 2.5 10 0"/>
+        <path d="M48 14V6M44 8h8"/>
+      </svg>
+      <div class="preview">
+        <div class="preview-inner">
+          <div class="dash" id="dash">
+            <aside>
+              <div class="on">Tableau de bord</div><div>Documents</div><div>Échéances</div><div>Abonnements</div><div>Courriers</div>
+            </aside>
+            <div class="dash-main">
+              <div class="dash-title" id="dash-title">Cette semaine</div>
+              <div id="dash-body"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="pills" role="tablist" aria-label="Aperçu du produit">
+        <button class="pill" role="tab" aria-selected="true" data-tab="semaine">Tableau de bord</button>
+        <button class="pill" role="tab" aria-selected="false" data-tab="docs">Documents</button>
+        <button class="pill" role="tab" aria-selected="false" data-tab="abos">Abonnements</button>
+        <button class="pill" role="tab" aria-selected="false" data-tab="courriers">Courriers</button>
+      </div>
+      <p class="note">Aperçu illustratif avec des données d'exemple.</p>
+    </div>
+  </div>
+</section>
+
+<section id="fonctions">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Fonctions</p>
+      <h2>Tout ce que vous repoussez, <span class="hl">traité</span> en quelques secondes.</h2>
+      <p class="lead">Fini les piles de papiers et les alertes oubliées. Un seul endroit, une seule adresse email.</p>
+    </div>
+    <div class="grid g3">
+      <article class="card">
+        <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
+        <h3>Une adresse dédiée</h3>
+        <p>Transférez emails, PDF ou photos de courriers. L'agent classe et comprend chaque document.</p>
+      </article>
+      <article class="card">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M5 4h14v16H5z"/><path d="M8 9h8M8 13h8M8 17h5"/></svg>
+        <h3>Résumés clairs</h3>
+        <p>Qui écrit, ce qu'on vous demande, combien, avant quand. En trois lignes, sans jargon.</p>
+      </article>
+      <article class="card">
+        <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        <h3>Échéances suivies</h3>
+        <p>Rappels avant chaque date limite : impôts, mutuelle, préavis, renouvellements.</p>
+      </article>
+      <article class="card">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M4 20l4-1 11-11-3-3L5 16z"/><path d="M14 6l3 3"/></svg>
+        <h3>Courriers prêts à envoyer</h3>
+        <p>Résiliation, contestation, demande de remboursement : un brouillon que vous relisez et validez.</p>
+      </article>
+      <article class="card">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>
+        <h3>Chasse aux économies</h3>
+        <p>Abonnements oubliés, hausses de tarif, frais cachés : l'agent les signale et chiffre le gain.</p>
+      </article>
+      <article class="card">
+        <svg class="icon" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c0-3.5 3-6 6-6s6 2.5 6 6M15 14c3 0 6 2 6 5"/></svg>
+        <h3>Pour toute la famille</h3>
+        <p>Jusqu'à cinq profils : conjoint, enfants, parents. Chacun son espace, un seul abonnement.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Comment ça marche</p>
+      <h2>Trois gestes, et <span class="hl">c'est réglé</span>.</h2>
+    </div>
+    <div class="grid g3">
+      <div class="card"><div class="step-n">01</div><h3>Vous transférez</h3><p>Un email, un PDF ou une photo de courrier suffit.</p></div>
+      <div class="card"><div class="step-n">02</div><h3>L'agent analyse</h3><p>Il extrait les dates, les montants et ce qu'on attend de vous.</p></div>
+      <div class="card"><div class="step-n">03</div><h3>Vous validez</h3><p>Vous relisez le brouillon, vous envoyez. Rien ne part sans votre accord.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="essai">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Essayez maintenant</p>
+      <h2>Collez un courrier, voyez ce que <span class="hl">l'agent repère</span>.</h2>
+      <p class="lead">Démonstration simplifiée : l'analyse se fait dans votre navigateur, rien n'est envoyé ni enregistré.</p>
+    </div>
+    <div class="try">
+      <div>
+        <label for="doc" class="eyebrow">Texte du document</label>
+        <textarea id="doc" placeholder="Collez ici le texte d'une facture, d'un courrier de résiliation, d'un avis…"></textarea>
+        <div class="cta-row" style="margin-top:12px">
+          <button class="btn btn-primary" id="analyze" type="button">Analyser</button>
+          <button class="btn" id="sample" type="button">Insérer un exemple</button>
+        </div>
+      </div>
+      <div class="card result" id="result" aria-live="polite">
+        <h3>Résultat</h3>
+        <p>L'analyse apparaîtra ici : type de document, dates limites, montants et action conseillée.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Cas d'usage</p>
+      <h2>Ce que l'agent <span class="hl">change</span> concrètement.</h2>
+    </div>
+    <div class="quotes">
+      <div class="quote"><p>« Mon abonnement internet a augmenté de 6 € sans prévenir. L'agent le détecte, rédige la demande de geste commercial et programme un rappel. »</p><div class="who"><i>1</i><div><b>Scénario</b><span>Hausse de tarif</span></div></div></div>
+      <div class="quote"><p>« Un recommandé de la mutuelle arrive. Résumé en trois lignes, date limite notée, courrier de réponse prêt à relire. »</p><div class="who"><i>2</i><div><b>Scénario</b><span>Courrier officiel</span></div></div></div>
+      <div class="quote"><p>« Fin de préavis dans 12 jours. L'agent prévient et prépare la lettre de résiliation avant que la reconduction ne tombe. »</p><div class="who"><i>3</i><div><b>Scénario</b><span>Contrat à résilier</span></div></div></div>
+      <div class="quote"><p>« Quatre profils, une seule vue : factures de la crèche, de l'école et de la mutuelle, rangées par échéance. »</p><div class="who"><i>4</i><div><b>Scénario</b><span>Vie de famille</span></div></div></div>
+    </div>
+    <p class="note">Exemples illustratifs, pas des témoignages de clients.</p>
+  </div>
+</section>
+
+<section id="tarifs">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Tarifs</p>
+      <h2>Un abonnement qui <span class="hl">se rentabilise</span>.</h2>
+      <p class="lead">Sans engagement. Résiliable en un clic.</p>
+    </div>
+    <div class="toggle" role="group" aria-label="Période de facturation">
+      <button type="button" id="bill-m" aria-pressed="true">Mensuel</button>
+      <button type="button" id="bill-y" aria-pressed="false">Annuel · 2 mois offerts</button>
+    </div>
+    <div class="grid g3">
+      <article class="card plan">
+        <h3>Découverte</h3>
+        <div class="price">0 €<small> /mois</small></div>
+        <ul><li>5 documents par mois</li><li>Résumés et échéances</li><li>1 profil</li></ul>
+        <a class="btn" href="#inscription" data-plan="decouverte">Commencer</a>
+      </article>
+      <article class="card plan featured">
+        <span class="badge">Le plus choisi</span>
+        <h3>Solo</h3>
+        <div class="price"><span data-price="solo">9,90</span> €<small data-per> /mois</small></div>
+        <ul><li>Documents illimités</li><li>Courriers prêts à envoyer</li><li>Détecteur d'abonnements</li><li>Rappels email et SMS</li></ul>
+        <a class="btn btn-primary" href="#inscription" data-plan="solo">Choisir Solo</a>
+      </article>
+      <article class="card plan">
+        <h3>Famille</h3>
+        <div class="price"><span data-price="famille">19,90</span> €<small data-per> /mois</small></div>
+        <ul><li>Tout Solo</li><li>Jusqu'à 5 profils</li><li>Espace partagé du foyer</li><li>Support prioritaire</li></ul>
+        <a class="btn" href="#inscription" data-plan="famille">Choisir Famille</a>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section id="faq">
+  <div class="wrap">
+    <div class="section-head"><p class="eyebrow">FAQ</p><h2>Questions <span class="hl">fréquentes</span>.</h2></div>
+    <details><summary>Mes documents sont-ils en sécurité ?</summary><p>Ils sont chiffrés, hébergés en Europe et jamais revendus ni utilisés à des fins publicitaires. Vous pouvez tout supprimer à tout moment.</p></details>
+    <details><summary>L'agent envoie-t-il des courriers sans mon accord ?</summary><p>Non. Chaque courrier est un brouillon que vous relisez et envoyez vous-même.</p></details>
+    <details><summary>Est-ce un conseil juridique ou fiscal ?</summary><p>Non. Mon Agent IA vous aide à comprendre et organiser vos démarches. Pour une situation complexe, consultez un professionnel.</p></details>
+    <details><summary>Puis-je résilier quand je veux ?</summary><p>Oui, en un clic depuis votre compte. Vous gardez l'accès jusqu'à la fin de la période payée.</p></details>
+    <details><summary>L'IA peut-elle se tromper ?</summary><p>Oui, comme tout outil automatique. C'est pourquoi chaque résumé renvoie vers le document d'origine et que rien n'est envoyé sans votre validation.</p></details>
+  </div>
+</section>
+
+<section id="inscription">
+  <div class="wrap">
+    <div class="inverted">
+      <div>
+        <h2>Reprenez la main sur votre administratif.</h2>
+        <p id="plan-label">Laissez votre email : on vous ouvre votre espace.</p>
+      </div>
+      <form class="signup" id="signup" novalidate>
+        <label for="email" class="sr" style="position:absolute;left:-9999px">Email</label>
+        <input id="email" name="email" type="email" placeholder="vous@exemple.fr" autocomplete="email" required>
+        <button class="btn btn-primary" type="submit">Créer mon espace</button>
+        <span id="form-msg" role="status"></span>
+      </form>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div>
+      <a class="logo" href="#top"><svg width="18" height="18" viewBox="0 0 24 24" fill="#0c0a09" aria-hidden="true"><path d="M12 1l2.6 7.4L22 11l-7.4 2.6L12 21l-2.6-7.4L2 11l7.4-2.6z"/></svg>Mon Agent IA</a>
+      <p style="margin-top:8px">© 2026 Mon Agent IA. Tous droits réservés.</p>
+    </div>
+    <nav aria-label="Pied de page">
+      <a href="mentions-legales.html">Mentions légales</a>
+      <a href="confidentialite.html">Confidentialité</a>
+      <a href="cgv.html">CGV</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
