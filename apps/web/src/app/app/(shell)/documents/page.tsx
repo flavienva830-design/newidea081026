@@ -13,7 +13,7 @@ const KIND: Record<string, string> = { INVOICE: "Facture", CONTRACT: "Contrat", 
 
 export default async function DocumentsPage() {
   const { tenant } = await requireTenant();
-  const docs = await withTenant(db(), tenant, (tx) => tx.document.findMany({ where: { deletedAt: null }, orderBy: { createdAt: "desc" }, take: 100 }));
+  const docs = await withTenant(db(), tenant, (tx) => tx.document.findMany({ where: { deletedAt: null }, orderBy: { createdAt: "desc" }, take: 100, include: { profile: { select: { displayName: true } } } }));
   const canDelete = can(tenant.role, "document:delete");
   return (
     <div className="mx-auto max-w-[900px]">
@@ -24,7 +24,7 @@ export default async function DocumentsPage() {
             <li key={d.id} className="flex items-center gap-4 p-5">
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[15px] font-medium">{d.title}</p>
-                <p className="truncate text-[13px] text-soft">{[KIND[d.kind], d.organization, d.amountCents != null ? euro(d.amountCents) : null, dayFr(d.createdAt)].filter(Boolean).join(" · ")}</p>
+                <p className="truncate text-[13px] text-soft">{[KIND[d.kind], d.profile ? `Pour ${d.profile.displayName}` : null, d.organization, d.amountCents != null ? euro(d.amountCents) : null, dayFr(d.createdAt)].filter(Boolean).join(" · ")}</p>
               </div>
               {d.urgencyScore != null && d.urgencyScore >= 70 && <span className="rounded-full bg-danger-wash px-2.5 py-1 text-[11px] font-medium text-danger">Urgent</span>}
               {canDelete && <RowActions actions={[{ label: "Supprimer", icon: "trash", variant: "ghost", confirm: "Supprimer ce document et ses échéances, actions et économies associées ?", run: async () => { "use server"; return deleteDocument({ id: d.id }); } }]} />}

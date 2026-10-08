@@ -18,7 +18,8 @@ type Result = {
   display: { summary: string; keyPoints: string[]; risks: { label: string; severity: "low" | "medium" | "high" }[] };
   saved: { deadlines: number; savings: number; actions: number; reminders: number };
 };
-type Item = { id: number; name: string; state: "pending" | "running" | "done" | "error"; result?: Result; error?: string };
+type Item = { id: number; name: string; state: "pending" | "running" | "done" | "error"; result?: Result; error?: string; forLabel?: string };
+export type Person = { id: string; label: string; isYou: boolean };
 
 const ACCEPT = ".pdf,.jpg,.jpeg,.png,.docx,application/pdf,image/jpeg,image/png,application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 const euro = (c: number) => (c / 100).toLocaleString("fr-FR", { style: "currency", currency: "EUR", minimumFractionDigits: c % 100 ? 2 : 0 });
@@ -41,13 +42,14 @@ function download(r: Result) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-export function Analyzer() {
+export function Analyzer({ people = [] }: { people?: Person[] }) {
   const [items, setItems] = useState<Item[]>([]);
+  const [profileId, setProfileId] = useState("");
   const [over, setOver] = useState(false);
   const input = useRef<HTMLInputElement>(null);
   const seq = useRef(0);
   const busy = useRef(false);
-  const queue = useRef<{ id: number; file: File }[]>([]);
+  const queue = useRef<{ id: number; file: File; profileId: string }[]>([]);
 
   const patch = (id: number, p: Partial<Item>) => setItems((xs) => xs.map((x) => (x.id === id ? { ...x, ...p } : x)));
 
@@ -55,11 +57,12 @@ export function Analyzer() {
     if (busy.current) return;
     busy.current = true;
     while (queue.current.length) {
-      const { id, file } = queue.current.shift()!;
+      const { id, file, profileId: forProfile } = queue.current.shift()!;
       patch(id, { state: "running" });
       try {
         const fd = new FormData();
         fd.append("file", file);
+        if (forProfile) fd.append("profileId", forProfile); // facultatif : le serveur vérifie qu'il appartient au foyer
         const res = await fetch("/api/analyze", { method: "POST", body: fd });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) patch(id, { state: "error", error: data.error ?? "Analyse impossible." });
@@ -73,14 +76,27 @@ export function Analyzer() {
 
   const add = (files: FileList | File[]) => {
     const list = Array.from(files).slice(0, 10);
-    const added = list.map((file) => ({ id: ++seq.current, file }));
-    setItems((xs) => [...added.map(({ id, file }) => ({ id, name: file.name, state: "pending" as const })), ...xs]);
+    const person = people.find((p) => p.id === profileId);
+    const added = list.map((file) => ({ id: ++seq.current, file, profileId }));
+    setItems((xs) => [...added.map(({ id, file }) => ({ id, name: file.name, state: "pending" as const, forLabel: person?.label })), ...xs]);
     queue.current.push(...added);
     void pump();
   };
 
   return (
     <div>
+      {people.length >= 2 && (
+        <div className="mb-6 max-w-sm">
+          <label htmlFor="doc-profile" className="mb-2 block text-[13px] font-medium">Pour qui est ce document ? <span className="font-normal text-soft">(facultatif)</span></label>
+          <select
+            id="doc-profile" value={profileId} onChange={(e) => setProfileId(e.target.value)}
+            className="h-12 w-full rounded-control border border-line-strong bg-white px-4 text-[15px] focus:border-accent focus:outline-none focus:shadow-[0_0_0_4px_rgba(73,168,255,0.18)]"
+          >
+            <option value="">Non précisé</option>
+            {people.map((p) => <option key={p.id} value={p.id}>{p.label}{p.isYou ? " (vous)" : ""}</option>)}
+          </select>
+        </div>
+      )}
       <div
         onDragOver={(e) => { e.preventDefault(); setOver(true); }}
         onDragLeave={() => setOver(false)}
@@ -101,7 +117,7 @@ export function Analyzer() {
             <motion.li key={it.id} layout initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }} className="rounded-[20px] border border-line p-5 sm:p-7">
               <div className="flex items-center gap-3">
                 {it.state === "running" || it.state === "pending" ? <Loader2 className="size-4 animate-spin text-accent-strong" /> : it.state === "error" ? <AlertTriangle className="size-4 text-danger" /> : <Sparkles className="size-4 text-accent-strong" />}
-                <p className="min-w-0 flex-1 truncate text-[14px] font-medium">{it.name}</p>
+                <p className="min-w-0 flex-1 truncate text-[14px] font-medium">{it.name}{it.forLabel && <span className="ml-2 font-normal text-soft">· pour {it.forLabel}</span>}</p>
                 <span className="text-[12px] text-soft">{it.state === "pending" ? "En attente" : it.state === "running" ? "Analyse en cours…" : it.state === "error" ? "Échec" : "Terminé"}</span>
               </div>
               {it.state === "error" && <p role="alert" className="mt-3 text-[14px] text-danger">{it.error}</p>}

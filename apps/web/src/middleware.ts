@@ -43,7 +43,7 @@ export function middleware(req: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  const dynamicZone = secured || ["/login", "/signup", "/forgot-password", "/reset-password"].some((p) => pathname.startsWith(p));
+  const dynamicZone = secured || ["/login", "/signup", "/forgot-password", "/reset-password", "/invite"].some((p) => pathname.startsWith(p));
   const nonce = dynamicZone ? btoa(crypto.randomUUID()) : null;
   const policy = csp(nonce);
 

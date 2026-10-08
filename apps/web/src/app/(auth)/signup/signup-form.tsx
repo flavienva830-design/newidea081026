@@ -11,9 +11,12 @@ import { Alert, Field, Input } from "@/components/ui/field";
 import { authClient } from "@/lib/auth-client";
 import { cn } from "@/lib/cn";
 import { MIN_PASSWORD, passwordStrength } from "@/lib/password";
+import { safeNext } from "@/lib/safe-next";
 
 export function SignupForm() {
   const params = useSearchParams();
+  const next = safeNext(params.get("next"), "");
+  const invite = next.startsWith("/invite/"); // inscription depuis un lien d'invitation : on y revient après la confirmation de l'email
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -36,7 +39,7 @@ export function SignupForm() {
     const plan = params.get("plan");
     const { error } = await authClient.signUp.email({
       name: name.trim(), email: email.trim(), password,
-      callbackURL: plan ? `/app/onboarding?plan=${encodeURIComponent(plan)}` : "/app/onboarding",
+      callbackURL: invite ? next : plan ? `/app/onboarding?plan=${encodeURIComponent(plan)}` : "/app/onboarding",
       fetchOptions: { headers: token ? { "x-captcha-response": token } : {} },
     });
     setLoading(false);
@@ -64,9 +67,10 @@ export function SignupForm() {
     <AuthShell
       title="Créer mon espace"
       subtitle="Gratuit pour commencer. Aucune carte bancaire."
-      footer={<>Déjà un compte ? <Link href="/login" className="font-medium text-fg underline underline-offset-4">Se connecter</Link></>}
+      footer={<>Déjà un compte ? <Link href={invite ? `/login?next=${encodeURIComponent(next)}` : "/login"} className="font-medium text-fg underline underline-offset-4">Se connecter</Link></>}
     >
       <form onSubmit={submit} className="space-y-5" noValidate>
+        {invite && <Alert tone="info">Vous avez été invité(e) à rejoindre un foyer. Utilisez l'adresse email qui a reçu l'invitation : après la confirmation de votre adresse, vous reviendrez sur l'invitation.</Alert>}
         {error && <Alert>{error}</Alert>}
         <Field label="Prénom et nom" htmlFor="name"><Input id="name" autoComplete="name" required value={name} onChange={(e) => setName(e.target.value)} placeholder="Camille Martin" /></Field>
         <Field label="Adresse email" htmlFor="email"><Input id="email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="camille@exemple.fr" /></Field>
