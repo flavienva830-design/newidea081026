@@ -41,6 +41,7 @@ jobs:
       APP_ENV: dev
       APP_URL: http://localhost:3000
       DATABASE_URL: postgresql://mai_app:apppass@localhost:5432/mai_test
+      DATABASE_SERVICE_URL: postgresql://mai_service:svcpass@localhost:5432/mai_test
       AUTH_SECRET: ci-only-secret-ci-only-secret-ci-only-secret-1234
       KEK_BASE64: Y2ktb25seS1rZWstY2ktb25seS1rZWstY2ktb25seTE=
       HASH_PEPPER: ci-only-pepper-ci-only-pepper-ci-only-1234

@@ -31,7 +31,8 @@
     "tailwind-merge": "3.7.0",
     "zod": "^4.0.0",
     "@mon-agent-ia/ai": "workspace:*",
-    "@mon-agent-ia/mail": "workspace:*"
+    "@mon-agent-ia/mail": "workspace:*",
+    "pdf-lib": "^1.17.1"
   },
   "devDependencies": {
     "@playwright/test": "1.56.1",
@@ -43,6 +44,6 @@
     "tailwindcss": "4.3.3",
     "typescript": "5.9.3",
     "vitest": "^3.2.0",
-    "pdf-lib": "^1.17.1"
+    "unpdf": "latest"
   }
 }

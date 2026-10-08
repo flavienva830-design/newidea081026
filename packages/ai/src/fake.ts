@@ -21,6 +21,18 @@ export class FakeProvider implements LlmProvider {
   readonly name = "fake";
 
   async complete(req: ProviderRequest): Promise<ProviderResponse> {
+    if (req.schemaName === "letter_draft") {
+      const dossier = req.parts.map((p) => (p.type === "text" ? p.text : "")).join("\n");
+      const org = /Organisme destinataire : (.+)/.exec(dossier)?.[1] ?? "";
+      const injected = /ignore (?:toutes? )?(?:les |tes )?(?:instructions|règles)/i.test(dossier);
+      const body = [
+        "Madame, Monsieur,",
+        `Je me permets de vous écrire au sujet du dossier suivant : ${/Objet du dossier : (.+)/.exec(dossier)?.[1] ?? "mon contrat"}${org ? ` (${org})` : ""}.`,
+        injected ? "Je souhaite obtenir des précisions sur ce dossier." : "Je vous prie de bien vouloir tenir compte de ma demande et de me confirmer sa prise en charge par écrit, en rappelant la référence [[REFERENCE]].",
+        "Dans l'attente de votre réponse, je vous prie d'agréer, Madame, Monsieur, l'expression de mes salutations distinguées.",
+      ].join("\n\n");
+      return { json: { subject: "Demande concernant mon dossier [[REFERENCE]]", body }, inputTokens: Math.ceil(dossier.length / 4) + 200, outputTokens: 220, model: req.model, latencyMs: 4 };
+    }
     const text = req.parts.filter((p) => p.type === "text").map((p) => (p as { text: string }).text).join("\n");
     const visionOnly = !text;
     const ds = dates(text);

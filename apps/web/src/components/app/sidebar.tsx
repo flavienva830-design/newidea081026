@@ -21,7 +21,7 @@ const NAV: { href: string; label: string; icon: LucideIcon; exact?: boolean }[] 
 ];
 
 /** Modules à venir : visibles mais explicitement signalés, jamais de page factice. */
-const SOON = new Set(["/app/letters", "/app/family", "/app/notifications"]);
+const SOON = new Set(["/app/family", "/app/notifications"]);
 
 export function Sidebar() {
   const path = usePathname();

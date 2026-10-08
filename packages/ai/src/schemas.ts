@@ -48,8 +48,8 @@ export type ModelAnalysis = z.infer<typeof ModelAnalysis>;
 type Json = Record<string, unknown>;
 
 /** Schéma JSON compatible « strict » : tous les champs requis, aucun champ additionnel. */
-export function strictJsonSchema(): Json {
-  const s = z.toJSONSchema(ModelAnalysis, { target: "draft-7" }) as Json;
+export function toStrictJsonSchema(schema: z.ZodType): Json {
+  const s = z.toJSONSchema(schema, { target: "draft-7" }) as Json;
   const walk = (n: unknown): void => {
     if (Array.isArray(n)) return n.forEach(walk);
     if (n && typeof n === "object") {
@@ -65,3 +65,5 @@ export function strictJsonSchema(): Json {
   walk(s);
   return s;
 }
+
+export const strictJsonSchema = (): Json => toStrictJsonSchema(ModelAnalysis);

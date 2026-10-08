@@ -22,3 +22,18 @@ export async function refundDocumentQuota(tx: Prisma.TransactionClient, househol
 export async function addAiCost(tx: Prisma.TransactionClient, householdId: string, period: string, micros: bigint): Promise<void> {
   await tx.$executeRaw`UPDATE usage_counters SET "aiCostMicros" = "aiCostMicros" + ${micros} WHERE "householdId" = ${householdId}::uuid AND period = ${period}`;
 }
+
+/** Consomme un courrier du quota mensuel, de façon atomique. */
+export async function consumeLetterQuota(tx: Prisma.TransactionClient, householdId: string, period: string, limit: number): Promise<boolean> {
+  const rows = await tx.$executeRaw`
+    INSERT INTO usage_counters (id, "householdId", period, documents, "lettersGenerated", "aiCostMicros")
+    VALUES (gen_random_uuid(), ${householdId}::uuid, ${period}, 0, 1, 0)
+    ON CONFLICT ("householdId", period)
+    DO UPDATE SET "lettersGenerated" = usage_counters."lettersGenerated" + 1
+    WHERE usage_counters."lettersGenerated" < ${limit}`;
+  return rows > 0;
+}
+
+export async function refundLetterQuota(tx: Prisma.TransactionClient, householdId: string, period: string): Promise<void> {
+  await tx.$executeRaw`UPDATE usage_counters SET "lettersGenerated" = GREATEST("lettersGenerated" - 1, 0) WHERE "householdId" = ${householdId}::uuid AND period = ${period}`;
+}

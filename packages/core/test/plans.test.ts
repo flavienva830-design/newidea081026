@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { checkDocumentQuota, checkProfileQuota, PLANS, usagePeriod } from "../src/plans.ts";
+import { checkDocumentQuota, checkLetterQuota, checkProfileQuota, PLANS, usagePeriod } from "../src/plans.ts";
 
 describe("plans & quotas", () => {
   it("tarifs conformes au brief", () => {
@@ -13,6 +13,11 @@ describe("plans & quotas", () => {
   it("quota documents", () => {
     expect(checkDocumentQuota("FREE", 4)).toEqual({ allowed: true });
     expect(checkDocumentQuota("FREE", 5)).toEqual({ allowed: false, reason: "documents_quota", limit: 5 });
+  });
+  it("quota courriers : non inclus en gratuit", () => {
+    expect(checkLetterQuota("FREE", 0)).toMatchObject({ allowed: false, reason: "letters_not_included" });
+    expect(checkLetterQuota("SOLO", 59)).toEqual({ allowed: true });
+    expect(checkLetterQuota("SOLO", 60)).toMatchObject({ allowed: false, limit: 60 });
   });
   it("quota profils", () => {
     expect(checkProfileQuota("SOLO", 1)).toMatchObject({ allowed: false, reason: "profiles_quota" });

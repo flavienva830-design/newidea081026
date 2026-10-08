@@ -3,12 +3,14 @@ import { withTenant } from "@mon-agent-ia/db";
 import { can } from "@mon-agent-ia/core";
 import { Empty, PageHead } from "@/components/app/page-bits";
 import { RowActions } from "@/components/app/row-actions";
+import { Button } from "@/components/ui/button";
 import { db } from "@/lib/db";
 import { setActionStatus } from "@/server/records";
 import { requireTenant } from "@/server/session";
 
 export const metadata: Metadata = { title: "Actions recommandées" };
 
+const LETTERABLE = new Set(["CANCEL_CONTRACT", "CONTEST", "REQUEST_REFUND", "FOLLOW_UP", "REPLY_REQUIRED"]);
 const TYPE: Record<string, string> = { CANCEL_CONTRACT: "Résiliation", CONTEST: "Contestation", REQUEST_REFUND: "Remboursement", FOLLOW_UP: "Relance", REPLY_REQUIRED: "Réponse", PAY_BEFORE: "Paiement", REVIEW_DOCUMENT: "À vérifier", OTHER: "Autre" };
 
 export default async function ActionsPage() {
@@ -27,6 +29,7 @@ export default async function ActionsPage() {
                 <p className="mt-0.5 text-[16px] font-medium tracking-tight">{a.title}</p>
                 <p className="text-[14px] text-soft">{a.rationale}</p>
               </div>
+              {canWrite && LETTERABLE.has(a.type) && <Button href={`/app/letters?action=${a.id}`} variant="secondary" size="sm">Préparer le courrier</Button>}
               {canWrite && <RowActions actions={[
                 ...(a.status === "PROPOSED" ? [{ label: "Accepter", icon: "check" as const, variant: "primary" as const, run: async () => { "use server"; return setActionStatus({ id: a.id, status: "ACCEPTED" }); } }] : []),
                 { label: "Terminé", icon: "check" as const, run: async () => { "use server"; return setActionStatus({ id: a.id, status: "DONE" }); } },

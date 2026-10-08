@@ -6,7 +6,7 @@ import { ModelAnalysis, strictJsonSchema } from "./schemas.ts";
 import { AnalysisError, type ContentPart, type LlmProvider } from "./types.ts";
 
 export type RunLog = {
-  task: "ANALYZE";
+  task: "ANALYZE" | "LETTER";
   model: string;
   promptVersion: string;
   inputTokens: number;
