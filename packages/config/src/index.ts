@@ -41,6 +41,10 @@ const schema = z.object({
   TURNSTILE_SECRET_KEY: z.string().optional(),
   SENTRY_DSN: z.string().optional(),
   NEXT_PUBLIC_POSTHOG_KEY: z.string().optional(),
+  // Vérification des mots de passe compromis (HIBP, k-anonymat). Ne peut être désactivée qu'hors production.
+  HIBP_ENABLED: z.enum(["true", "false"]).default("true"),
+  // Boîte d'envoi de test (E2E) : n'existe qu'en APP_ENV=dev, jamais en staging ni en production.
+  E2E_OUTBOX: z.literal("1").optional(),
 });
 
 const REQUIRED_IN_PRODUCTION = [
@@ -70,11 +74,14 @@ export function loadEnv(source: Record<string, string | undefined> = process.env
   }
   const env = parsed.data;
   const problems: string[] = [];
+  if (env.E2E_OUTBOX && env.APP_ENV !== "dev") problems.push("- E2E_OUTBOX: autorisé uniquement avec APP_ENV=dev");
 
-  if (env.APP_ENV === "production" || env.NODE_ENV === "production") {
+  // Exigences strictes dès qu'on n'est plus en développement (staging et production tournent tous deux avec NODE_ENV=production).
+  if (env.APP_ENV !== "dev") {
     for (const k of REQUIRED_IN_PRODUCTION) if (!env[k]) problems.push(`- ${k}: obligatoire en production`);
     for (const k of ["AUTH_SECRET", "HASH_PEPPER"] as const) if (WEAK.test(env[k])) problems.push(`- ${k}: valeur faible ou d'exemple`);
-    if (!env.APP_URL.startsWith("https://")) problems.push("- APP_URL: HTTPS obligatoire en production");
+    if (!env.APP_URL.startsWith("https://")) problems.push("- APP_URL: HTTPS obligatoire hors développement");
+    if (env.HIBP_ENABLED !== "true") problems.push("- HIBP_ENABLED: ne peut pas être désactivé hors développement");
     if (env.DATABASE_SERVICE_URL && env.DATABASE_SERVICE_URL === env.DATABASE_URL)
       problems.push("- DATABASE_SERVICE_URL: doit différer de DATABASE_URL (rôles séparés)");
   }

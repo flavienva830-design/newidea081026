@@ -37,14 +37,25 @@ describe("validation de l'environnement", () => {
       expect((e as Error).message).not.toContain("trop-court");
     }
   });
+  it("la boîte d'envoi de test est interdite hors dev", () => {
+    expect(loadEnv({ ...dev, E2E_OUTBOX: "1" }).E2E_OUTBOX).toBe("1");
+    expect(() => loadEnv({ ...prod, E2E_OUTBOX: "1" })).toThrow(/E2E_OUTBOX/);
+    expect(() => loadEnv({ ...dev, APP_ENV: "staging", E2E_OUTBOX: "1" })).toThrow(/E2E_OUTBOX/);
+  });
   it("production : tout est obligatoire", () => {
     expect(loadEnv(prod).APP_ENV).toBe("production");
     expect(() => loadEnv({ ...prod, STRIPE_SECRET_KEY: undefined })).toThrow(/STRIPE_SECRET_KEY/);
+    expect(() => loadEnv({ ...dev, NODE_ENV: "production" })).not.toThrow(); // next start en local/CI reste en APP_ENV=dev
     expect(() => loadEnv({ ...prod, REDIS_URL: undefined })).toThrow(/REDIS_URL/);
+  });
+  it("staging est aussi strict que la production", () => {
+    expect(() => loadEnv({ ...dev, APP_ENV: "staging" })).toThrow(/obligatoire/);
+    expect(loadEnv({ ...prod, APP_ENV: "staging", APP_URL: "https://staging.monagentia.com" }).APP_ENV).toBe("staging");
   });
   it("production : HTTPS obligatoire, secrets non triviaux, rôles DB distincts", () => {
     expect(() => loadEnv({ ...prod, APP_URL: "http://monagentia.com" })).toThrow(/HTTPS/);
     expect(() => loadEnv({ ...prod, AUTH_SECRET: "changeme".padEnd(40, "x") })).toThrow(/faible/);
     expect(() => loadEnv({ ...prod, DATABASE_SERVICE_URL: prod.DATABASE_URL })).toThrow(/rôles séparés/);
+    expect(() => loadEnv({ ...prod, HIBP_ENABLED: "false" })).toThrow(/HIBP_ENABLED/);
   });
 });

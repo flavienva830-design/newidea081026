@@ -8,3 +8,8 @@ coverage
 !.env.example
 *.log
 packages/db/src/generated
+.next-dev
+test-results
+playwright-report
+tsconfig.tsbuildinfo
+next-env.d.ts

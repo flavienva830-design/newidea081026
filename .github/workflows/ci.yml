@@ -36,6 +36,15 @@ jobs:
       TEST_APP_URL: postgresql://mai_app:apppass@localhost:5432/mai_test
       TEST_REDIS_URL: redis://localhost:6379
       DATABASE_ADMIN_URL: postgresql://postgres:postgres@localhost:5432/mai_test
+      # Application web (E2E) : APP_ENV=dev, boîte d'envoi de test activée, aucun secret réel.
+      APP_ENV: dev
+      APP_URL: http://localhost:3000
+      DATABASE_URL: postgresql://mai_app:apppass@localhost:5432/mai_test
+      AUTH_SECRET: ci-only-secret-ci-only-secret-ci-only-secret-1234
+      KEK_BASE64: Y2ktb25seS1rZWstY2ktb25seS1rZWstY2ktb25seTE=
+      HASH_PEPPER: ci-only-pepper-ci-only-pepper-ci-only-1234
+      HIBP_ENABLED: "false"
+      E2E_OUTBOX: "1"
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -52,5 +61,16 @@ jobs:
         run: psql "$TEST_ADMIN_URL" -c "ALTER ROLE mai_app LOGIN PASSWORD 'apppass'"
       - run: pnpm typecheck
       - run: pnpm test
+      - name: Build de l'application
+        run: pnpm --filter @mon-agent-ia/web build
+      - name: Installer Chromium
+        run: pnpm --filter @mon-agent-ia/web exec playwright install --with-deps chromium
+      - name: Tests E2E
+        run: pnpm --filter @mon-agent-ia/web test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: apps/web/playwright-report
       - name: Audit des dépendances
         run: pnpm audit --prod --audit-level=high
