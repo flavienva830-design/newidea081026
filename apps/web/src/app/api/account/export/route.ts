@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { db } from "@/lib/db";
+import { db, dbService } from "@/lib/db";
 import { env } from "@/lib/env";
 import { limiters } from "@/lib/limiters";
 import { isSameOrigin } from "@/lib/same-origin";
@@ -20,7 +20,7 @@ export async function POST(req: Request) {
   const lim = await limiters().api.check(`export:${session.user.id}`);
   if (!lim.allowed) return NextResponse.json({ error: "Trop de demandes. Réessayez plus tard." }, { status: 429 });
 
-  const data = await buildExport(db(), session.user.id);
+  const data = await buildExport(db(), session.user.id, new Date(), e.DATABASE_SERVICE_URL ? dbService() : undefined);
   await audit(db(), { actorId: session.user.id, action: "account.exported", ip: clientInfo(req.headers).ip }, e.HASH_PEPPER);
   return new NextResponse(JSON.stringify(data, null, 2), {
     headers: { "content-type": "application/json; charset=utf-8", "content-disposition": 'attachment; filename="mes-donnees-mon-agent-ia.json"', "cache-control": "no-store" },

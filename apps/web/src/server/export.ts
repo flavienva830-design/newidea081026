@@ -6,7 +6,7 @@ import { can, type MembershipRole } from "@mon-agent-ia/core";
  * Aucun fichier à joindre : les documents ne sont jamais conservés. L'archive ne contient donc que des données
  * structurées, et aucun secret (mot de passe haché, clés de session, secret TOTP, clé de chiffrement).
  */
-export async function buildExport(db: Db, userId: string, now = new Date()) {
+export async function buildExport(db: Db, userId: string, now = new Date(), service?: Db) {
   const user = await db.user.findUniqueOrThrow({
     where: { id: userId },
     select: { id: true, name: true, email: true, emailVerified: true, locale: true, timezone: true, createdAt: true, onboardedAt: true, twoFactorEnabled: true },
@@ -18,6 +18,10 @@ export async function buildExport(db: Db, userId: string, now = new Date()) {
     db.notification.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 1000, select: { type: true, title: true, body: true, createdAt: true, readAt: true } }),
     db.notificationPreference.findMany({ where: { userId }, select: { type: true, channel: true, enabled: true } }),
   ]);
+
+  // Notes internes du support : données personnelles (RGPD art. 15). La table est inaccessible au rôle applicatif,
+  // d'où le client de service. L'identité de l'agent n'est pas communiquée, seulement la note et sa date.
+  const supportNotes = service ? await service.supportNote.findMany({ where: { userId }, orderBy: { createdAt: "asc" }, select: { body: true, createdAt: true } }) : [];
 
   const households = [];
   for (const m of memberships) {
@@ -48,6 +52,6 @@ export async function buildExport(db: Db, userId: string, now = new Date()) {
     format: "mon-agent-ia-export/1",
     note: "Vos fichiers ne sont jamais conservés par Mon Agent IA : cette archive contient uniquement les données structurées issues des analyses.",
     account: user,
-    consents, notificationPreferences, notifications, loginHistory: logins, households,
+    consents, notificationPreferences, notifications, loginHistory: logins, supportNotes, households,
   };
 }

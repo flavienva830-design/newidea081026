@@ -2,7 +2,8 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { randomUUID } from "node:crypto";
 import type Stripe from "stripe";
 import { createDb, type Db } from "@mon-agent-ia/db";
-import { effectivePlan, enforcePlanLimits, handleStripeEvent } from "../src/handler.ts";
+import { enforcePlanLimits, handleStripeEvent } from "../src/handler.ts";
+import { effectivePlan, mrrCents } from "../src/mrr.ts";
 import type { PriceCatalog } from "../src/catalog.ts";
 
 const adminUrl = process.env["TEST_ADMIN_URL"];
@@ -134,6 +135,36 @@ run("webhooks Stripe : synchronisation des abonnements", () => {
     const e = ev("customer.subscription.updated", sub(h.customer, "p_sm"), T0 + 1);
     await Promise.all([handleStripeEvent(deps(), e), handleStripeEvent(deps(), e), handleStripeEvent(deps(), e)]);
     expect(await row(h.householdId)).toMatchObject({ plan: "SOLO", status: "ACTIVE" });
+  });
+
+  it("historique des revenus : chaque changement de MRR est enregistré, jamais en double", async () => {
+    const h = await home();
+    await handleStripeEvent(deps(), ev("checkout.session.completed", { mode: "subscription", client_reference_id: h.householdId, customer: h.customer, subscription: `sub_${h.customer}` }));
+    const created = ev("customer.subscription.created", sub(h.customer, "p_sm"), T0 + 1);
+    await handleStripeEvent(deps(), created);
+    await handleStripeEvent(deps(), created); // doublon : aucune ligne de plus
+    await handleStripeEvent(deps(), ev("customer.subscription.updated", sub(h.customer, "p_fy"), T0 + 2));
+    await handleStripeEvent(deps(), ev("invoice.payment_failed", { customer: h.customer }, T0 + 3)); // statut seul : MRR inchangé, pas de ligne
+    await handleStripeEvent(deps(), ev("customer.subscription.deleted", sub(h.customer, "p_fy", { status: "canceled" }), T0 + 4));
+    const rows = await admin.billingHistory.findMany({ where: { householdId: h.householdId }, orderBy: { at: "asc" } });
+    expect(rows.map((r) => [r.fromPlan, r.toPlan, r.mrrBeforeCents, r.mrrAfterCents])).toEqual([
+      ["FREE", "SOLO", 0, 990],
+      ["SOLO", "FAMILLE", 990, 1658], // annuel : 19 900 / 12
+      ["FAMILLE", "FREE", 1658, 0],
+    ]);
+    expect(rows.reduce((n, r) => n + r.mrrAfterCents - r.mrrBeforeCents, 0)).toBe(0); // somme des variations = MRR final
+  });
+
+  it("MRR estimé : mensuel, annuel ramené au mois, impayé toléré, gratuit = 0", () => {
+    const now = new Date("2026-10-08T00:00:00Z");
+    const s = (plan: "SOLO" | "FAMILLE", interval: string | null, status: "ACTIVE" | "PAST_DUE" | "CANCELED", end: Date | null = null) => ({ plan, status, interval, currentPeriodEnd: end });
+    expect(mrrCents(s("SOLO", "month", "ACTIVE"), now)).toBe(990);
+    expect(mrrCents(s("SOLO", "year", "ACTIVE"), now)).toBe(825); // 9 900 / 12
+    expect(mrrCents(s("FAMILLE", null, "ACTIVE"), now)).toBe(1990);
+    expect(mrrCents(s("SOLO", "month", "PAST_DUE", new Date("2026-10-20T00:00:00Z")), now)).toBe(990);
+    expect(mrrCents(s("SOLO", "month", "PAST_DUE", new Date("2026-10-01T00:00:00Z")), now)).toBe(0);
+    expect(mrrCents(s("SOLO", "month", "CANCELED"), now)).toBe(0);
+    expect(mrrCents(null, now)).toBe(0);
   });
 
   it("offre effective : impayé toléré jusqu'à la fin de la période payée", () => {

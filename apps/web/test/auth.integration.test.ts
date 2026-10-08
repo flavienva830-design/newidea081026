@@ -78,6 +78,26 @@ run("authentification (Better Auth + Postgres)", () => {
     expect(fails).toBeGreaterThan(0);
   });
 
+  it("compte suspendu : aucune session ne s'ouvre, même avec le bon mot de passe ; la réactivation rétablit l'accès", async () => {
+    const { banUserOp, unbanUserOp } = await import("../src/server/admin/ops");
+    const user = await admin.user.findUniqueOrThrow({ where: { email } });
+    const ctx = { userId: "staff-test", pepper: "p".repeat(40) };
+    expect(await admin.session.count({ where: { userId: user.id } })).toBeGreaterThan(0); // session ouverte par le test précédent
+
+    expect((await banUserOp(admin, ctx, { id: user.id, reason: "test d'intégration" })).ok).toBe(true);
+    expect(await admin.session.count({ where: { userId: user.id } })).toBe(0); // sessions existantes fermées
+
+    const err = await authFn().api.signInEmail({ body: { email, password: PASSWORD }, headers: hdr("203.0.113.30") }).catch((e: unknown) => e);
+    expect((err as { status?: string }).status).toBe("FORBIDDEN");
+    expect(await admin.session.count({ where: { userId: user.id } })).toBe(0);
+    const before = await admin.loginEvent.count({ where: { userId: user.id, success: true } });
+
+    expect((await unbanUserOp(admin, ctx, { id: user.id, reason: "test d'intégration" })).ok).toBe(true);
+    const res = await authFn().api.signInEmail({ body: { email, password: PASSWORD }, headers: hdr("203.0.113.31") });
+    expect(res.user.email).toBe(email);
+    expect(await admin.loginEvent.count({ where: { userId: user.id, success: true } })).toBe(before + 1); // la tentative refusée n'a pas été comptée comme un succès
+  });
+
   it("verrouillage par compte après trop d'essais (force brute)", async () => {
     let blocked = false;
     for (let i = 0; i < 12 && !blocked; i++) {

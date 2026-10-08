@@ -13,3 +13,6 @@ test-results
 playwright-report
 tsconfig.tsbuildinfo
 next-env.d.ts
+
+# Worktrees des agents de développement (copies de travail, jamais versionnées)
+.claude/worktrees/

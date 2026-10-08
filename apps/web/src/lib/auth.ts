@@ -183,6 +183,12 @@ function build() {
       },
       session: {
         create: {
+          // Un compte suspendu ne peut ouvrir aucune session, quelle que soit la méthode (mot de passe, lien magique, Google).
+          before: async (session) => {
+            const u = await db().user.findUnique({ where: { id: session.userId }, select: { bannedAt: true } });
+            if (u?.bannedAt) throw new APIError("FORBIDDEN", { message: "Ce compte est suspendu. Contactez le support." });
+            return { data: session };
+          },
           after: async (session) => {
             const info = {
               ip: session.ipAddress ?? "unknown",

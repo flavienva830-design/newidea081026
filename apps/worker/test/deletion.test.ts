@@ -39,6 +39,8 @@ run("suppression de compte", () => {
     const st = await purgeDueDeletions({ db: svc, now: () => NOW, deleteBillingCustomer: async (id) => void deleted.push(id) });
     expect(st.purged).toBeGreaterThanOrEqual(1);
     expect(deleted).toContain(`cus_${h}`);
+    const hist = await admin.billingHistory.findFirstOrThrow({ where: { householdId: h } });
+    expect(hist).toMatchObject({ reason: "account_deleted", mrrBeforeCents: 990, mrrAfterCents: 0 }); // le revenu perdu est tracé
     expect(await admin.user.count({ where: { id: u } })).toBe(0);
     expect(await admin.household.count({ where: { id: h } })).toBe(0);
     for (const t of ["document", "deadline", "saving", "profile", "membership", "billingSubscription"] as const) {

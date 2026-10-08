@@ -10,7 +10,7 @@
     "@mon-agent-ia/core": "workspace:*",
     "fflate": "^0.8.2",
     "openai": "7.30.0",
-    "unpdf": "latest",
+    "unpdf": "1.8.1",
     "zod": "^4.0.0"
   },
   "devDependencies": {

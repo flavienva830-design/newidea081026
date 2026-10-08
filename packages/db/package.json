@@ -10,7 +10,8 @@
     "migrate:dev": "prisma migrate dev",
     "migrate:deploy": "prisma migrate deploy",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "staff": "tsx scripts/staff.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "7.10.0",
@@ -21,6 +22,7 @@
     "@types/node": "^22.0.0",
     "@types/pg": "^8.11.0",
     "prisma": "7.10.0",
+    "tsx": "4.23.15",
     "typescript": "5.9.3",
     "vitest": "^3.2.0"
   }

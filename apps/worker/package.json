@@ -15,8 +15,8 @@
     "@mon-agent-ia/db": "workspace:*",
     "@mon-agent-ia/mail": "workspace:*",
     "bullmq": "6.3.11",
-    "ioredis": "latest",
-    "tsx": "latest",
+    "ioredis": "6.0.0",
+    "tsx": "4.23.15",
     "@mon-agent-ia/billing": "workspace:*"
   },
   "devDependencies": {

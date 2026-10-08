@@ -233,6 +233,7 @@ model User {
   consents                Consent[]
   exportRequests          DataExportRequest[]
   deletionRequests        DeletionRequest[]
+  supportNotes            SupportNote[]
 
   @@map("users")
 }
@@ -769,4 +770,40 @@ model DeletionRequest {
   completedAt  DateTime?
 
   @@map("deletion_requests")
+}
+
+// ───────────────────────── Administration : revenus et support ─────────────────────────
+
+// Historique des changements d'abonnement : source du MRR dans le temps, du churn et de l'expansion.
+// Pas de clé étrangère : l'historique comptable survit à la suppression d'un foyer (identifiant opaque, aucune donnée personnelle).
+// Accessible uniquement au rôle de service (droits retirés à mai_app dans la migration).
+model BillingHistory {
+  id             String        @id @default(uuid(7)) @db.Uuid
+  householdId    String        @db.Uuid
+  at             DateTime      @default(now())
+  fromPlan       PlanTier
+  toPlan         PlanTier
+  fromStatus     BillingStatus
+  toStatus       BillingStatus
+  interval       String?
+  mrrBeforeCents Int
+  mrrAfterCents  Int
+  reason         String
+
+  @@index([at])
+  @@index([householdId])
+  @@map("billing_history")
+}
+
+// Notes internes du support (courtes, factuelles). Données personnelles : incluses dans l'export et supprimées avec le compte.
+model SupportNote {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  authorId  String
+  body      String
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@map("support_notes")
 }

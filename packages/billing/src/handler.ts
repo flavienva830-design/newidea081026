@@ -1,4 +1,5 @@
 import { PLANS, type PlanTier } from "@mon-agent-ia/core/plans";
+import { effectivePlan, mrrCents, type BillingStatus as BillingStatusT, type SubscriptionState } from "./mrr.ts";
 import { Prisma, type Db } from "@mon-agent-ia/db";
 import type Stripe from "stripe";
 import { planForPrice, type PriceCatalog } from "./catalog.ts";
@@ -6,7 +7,7 @@ import { planForPrice, type PriceCatalog } from "./catalog.ts";
 export type HandlerDeps = { db: Db; catalog: PriceCatalog; now?: () => Date };
 export type HandlerResult = { status: "processed" | "duplicate" | "ignored"; detail?: string };
 
-type BillingStatus = "TRIALING" | "ACTIVE" | "PAST_DUE" | "CANCELED" | "INCOMPLETE" | "UNPAID";
+type BillingStatus = BillingStatusT;
 const STATUS: Record<string, BillingStatus> = {
   trialing: "TRIALING", active: "ACTIVE", past_due: "PAST_DUE", canceled: "CANCELED", unpaid: "UNPAID",
   incomplete: "INCOMPLETE", incomplete_expired: "CANCELED", paused: "UNPAID",
@@ -70,13 +71,37 @@ async function findByCustomer(db: Db, customer: string | null) {
   return customer ? db.billingSubscription.findUnique({ where: { stripeCustomerId: customer } }) : null;
 }
 
-/** Applique `data` seulement si l'événement est plus récent que le dernier appliqué. */
-async function applyIfNewer(db: Db, id: string, at: Date, data: Prisma.BillingSubscriptionUpdateInput): Promise<boolean> {
-  const res = await db.billingSubscription.updateMany({
-    where: { id, OR: [{ lastEventAt: null }, { lastEventAt: { lte: at } }] },
-    data: { ...(data as Prisma.BillingSubscriptionUncheckedUpdateManyInput), lastEventAt: at },
+type BillingTx = Pick<Prisma.TransactionClient, "billingSubscription" | "billingHistory">;
+
+type Row = SubscriptionState & { id: string; householdId: string; lastEventAt: Date | null };
+
+/**
+ * Applique `data` seulement si l'événement est plus récent que le dernier appliqué, ET enregistre dans l'historique
+ * tout changement de revenu (même transaction : jamais l'un sans l'autre).
+ */
+async function applyIfNewer(db: Db, row: Row, event: Stripe.Event, data: Prisma.BillingSubscriptionUpdateInput & Partial<SubscriptionState>, now: Date): Promise<boolean> {
+  const at = eventDate(event);
+  return db.$transaction(async (tx: BillingTx) => {
+    const res = await tx.billingSubscription.updateMany({
+      where: { id: row.id, OR: [{ lastEventAt: null }, { lastEventAt: { lte: at } }] },
+      data: { ...(data as Prisma.BillingSubscriptionUncheckedUpdateManyInput), lastEventAt: at },
+    });
+    if (res.count === 0) return false;
+    const after: SubscriptionState = {
+      plan: (data.plan as PlanTier | undefined) ?? row.plan,
+      status: (data.status as BillingStatus | undefined) ?? row.status,
+      interval: data.interval !== undefined ? (data.interval as string | null) : row.interval,
+      currentPeriodEnd: data.currentPeriodEnd !== undefined ? (data.currentPeriodEnd as Date | null) : row.currentPeriodEnd,
+    };
+    const before = mrrCents(row, now);
+    const next = mrrCents(after, now);
+    if (before !== next || row.plan !== after.plan) {
+      await tx.billingHistory.create({
+        data: { householdId: row.householdId, at, fromPlan: row.plan, toPlan: after.plan, fromStatus: row.status, toStatus: after.status, interval: after.interval, mrrBeforeCents: before, mrrAfterCents: next, reason: event.type },
+      });
+    }
+    return true;
   });
-  return res.count > 0;
 }
 
 async function onCheckoutCompleted(deps: HandlerDeps, s: Stripe.Checkout.Session, event: Stripe.Event): Promise<HandlerResult> {
@@ -112,18 +137,19 @@ async function onSubscriptionChanged(deps: HandlerDeps, sub: Stripe.Subscription
 
   const status = STATUS[sub.status] ?? "INCOMPLETE";
   const periodEnd = item?.current_period_end ? new Date(item.current_period_end * 1000) : null;
-  const applied = await applyIfNewer(db, row.id, eventDate(event), {
+  const now = deps.now?.() ?? new Date();
+  const applied = await applyIfNewer(db, row, event, {
     plan: price.plan, status, interval: price.interval, currentPeriodEnd: periodEnd, cancelAtPeriodEnd: sub.cancel_at_period_end, stripeSubscriptionId: sub.id,
-  });
+  }, now);
   if (!applied) return { status: "ignored", detail: "événement plus ancien" };
-  await enforcePlanLimits(db, row.householdId, effectivePlan(price.plan, status, periodEnd, deps.now?.() ?? new Date()));
+  await enforcePlanLimits(db, row.householdId, effectivePlan(price.plan, status, periodEnd, now));
   return { status: "processed" };
 }
 
 async function onSubscriptionDeleted(deps: HandlerDeps, sub: Stripe.Subscription, event: Stripe.Event): Promise<HandlerResult> {
   const row = await findByCustomer(deps.db, customerId(sub.customer));
   if (!row) return { status: "ignored", detail: "client inconnu" };
-  const applied = await applyIfNewer(deps.db, row.id, eventDate(event), { plan: "FREE", status: "CANCELED", stripeSubscriptionId: null, cancelAtPeriodEnd: false, interval: null, currentPeriodEnd: null });
+  const applied = await applyIfNewer(deps.db, row, event, { plan: "FREE", status: "CANCELED", stripeSubscriptionId: null, cancelAtPeriodEnd: false, interval: null, currentPeriodEnd: null }, deps.now?.() ?? new Date());
   if (!applied) return { status: "ignored", detail: "événement plus ancien" };
   await enforcePlanLimits(deps.db, row.householdId, "FREE");
   return { status: "processed" };
@@ -134,10 +160,10 @@ async function onInvoice(deps: HandlerDeps, inv: Stripe.Invoice, event: Stripe.E
   const row = await findByCustomer(db, customerId(inv.customer as string | { id: string } | null));
   if (!row) return { status: "ignored", detail: "client inconnu" };
   if (kind === "paid") {
-    const applied = await applyIfNewer(db, row.id, eventDate(event), row.status === "PAST_DUE" ? { status: "ACTIVE" } : {});
+    const applied = await applyIfNewer(db, row, event, row.status === "PAST_DUE" ? { status: "ACTIVE" } : {}, deps.now?.() ?? new Date());
     return { status: applied ? "processed" : "ignored" };
   }
-  const applied = await applyIfNewer(db, row.id, eventDate(event), { status: "PAST_DUE" });
+  const applied = await applyIfNewer(db, row, event, { status: "PAST_DUE" }, deps.now?.() ?? new Date());
   if (applied) await notifyOwners(db, row.householdId, "payment_failed", "Le paiement de votre abonnement a échoué", "Mettez à jour votre moyen de paiement pour conserver vos avantages.");
   return { status: applied ? "processed" : "ignored" };
 }
@@ -150,11 +176,7 @@ async function onMoneyMovement(deps: HandlerDeps, event: Stripe.Event): Promise<
   return { status: "processed" };
 }
 
-/** Offre réellement accordée : abonnement actif, en essai, ou impayé encore dans la période payée. */
-export function effectivePlan(plan: PlanTier, status: BillingStatus, periodEnd: Date | null, now: Date): PlanTier {
-  const active = status === "ACTIVE" || status === "TRIALING" || (status === "PAST_DUE" && (periodEnd?.getTime() ?? 0) > now.getTime());
-  return active ? plan : "FREE";
-}
+export { effectivePlan };
 
 /**
  * Rétrogradation : si le foyer dépasse le nombre de profils de sa nouvelle offre, les profils les plus récents sont

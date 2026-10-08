@@ -1,3 +1,4 @@
+import { mrrCents } from "@mon-agent-ia/billing";
 import type { Db } from "@mon-agent-ia/db";
 
 export type DeletionDeps = {
@@ -44,8 +45,13 @@ async function purgeUser(deps: DeletionDeps, userId: string): Promise<void> {
   for (const m of memberships) {
     const others = await db.membership.findMany({ where: { householdId: m.householdId, userId: { not: userId } }, orderBy: { createdAt: "asc" }, select: { userId: true, role: true } });
     if (others.length === 0) {
-      const billing = await db.billingSubscription.findUnique({ where: { householdId: m.householdId }, select: { stripeCustomerId: true } });
+      const billing = await db.billingSubscription.findUnique({ where: { householdId: m.householdId }, select: { stripeCustomerId: true, plan: true, status: true, interval: true, currentPeriodEnd: true } });
       if (billing && deps.deleteBillingCustomer) await deps.deleteBillingCustomer(billing.stripeCustomerId);
+      // Le revenu disparaît avec le foyer : on le trace pour que le MRR historique reste exact.
+      const mrr = billing ? mrrCents(billing, new Date()) : 0;
+      if (billing && mrr > 0) {
+        await db.billingHistory.create({ data: { householdId: m.householdId, fromPlan: billing.plan, toPlan: "FREE", fromStatus: billing.status, toStatus: "CANCELED", interval: billing.interval, mrrBeforeCents: mrr, mrrAfterCents: 0, reason: "account_deleted" } });
+      }
       await db.household.delete({ where: { id: m.householdId } }); // cascade : tout ce que contient le foyer
     } else if (m.role === "OWNER") {
       const owners = await db.membership.count({ where: { householdId: m.householdId, role: "OWNER", userId: { not: userId } } });

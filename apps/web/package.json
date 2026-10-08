@@ -39,12 +39,14 @@
     "@playwright/test": "1.56.1",
     "@tailwindcss/postcss": "4.3.3",
     "@types/node": "^22.0.0",
+    "@types/pg": "^8.11.0",
     "@types/qrcode": "^1.5.6",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
+    "pg": "^8.13.0",
     "tailwindcss": "4.3.3",
     "typescript": "5.9.3",
-    "vitest": "^3.2.0",
-    "unpdf": "latest"
+    "unpdf": "1.8.1",
+    "vitest": "^3.2.0"
   }
 }
