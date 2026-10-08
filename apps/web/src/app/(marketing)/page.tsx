@@ -12,17 +12,18 @@ export const metadata: Metadata = {
 };
 
 const FAQ = [
-  ["Mes documents sont-ils en sécurité ?", "Ils sont chiffrés, hébergés en Europe et ne sont jamais revendus ni utilisés à des fins publicitaires. Chaque foyer dispose de sa propre clé de chiffrement et vous pouvez tout supprimer à tout moment."],
+  ["Mes documents sont-ils conservés ?", "Non. Vos fichiers sont analysés en mémoire puis oubliés : nous ne les stockons pas. Seules quelques informations utiles (organisme, échéance, montant, économie détectée) sont gardées pour vos rappels, et vous pouvez les supprimer à tout moment."],
   ["L'agent envoie-t-il des courriers sans mon accord ?", "Non. L'agent propose et prépare ; rien n'est envoyé sans votre validation explicite."],
   ["Est-ce un conseil juridique ou fiscal ?", "Non. Mon Agent IA vous aide à comprendre et organiser vos démarches. Pour une situation complexe, rapprochez-vous d'un professionnel."],
   ["L'IA peut-elle se tromper ?", "Oui, comme tout outil automatique. C'est pourquoi chaque résumé renvoie au document d'origine et que vous validez chaque courrier avant envoi."],
+  ["Que garde l'agent, exactement ?", "Uniquement des données structurées courtes : le nom de l'organisme, la nature du document, les dates limites, les montants et les économies repérées. Jamais le fichier, jamais son texte, jamais les courriers générés. Les numéros de compte, de carte ou de sécurité sociale ne sont jamais enregistrés."],
   ["Puis-je résilier quand je veux ?", "Oui, en un clic depuis votre compte. Vous conservez l'accès jusqu'à la fin de la période déjà payée."],
-  ["Comment transférer mes documents ?", "Par glisser-déposer, depuis votre mobile, ou en transférant un email à votre adresse personnelle. L'agent s'occupe du reste."],
+  ["Comment transférer mes documents ?", "Par glisser-déposer ou depuis votre mobile. L'agent analyse le document, vous présente le résultat, puis l'oublie."],
 ] as const;
 
 const STEPS = [
-  ["01", "Vous transférez", "Un courrier photographié, un PDF, un email transféré : l'agent accepte tout ce qui arrive du quotidien."],
-  ["02", "L'agent comprend", "Il lit, classe, extrait les montants et les dates, mesure l'urgence et repère ce qui cloche."],
+  ["01", "Vous transférez", "Un courrier photographié, un PDF, une facture : l'agent accepte tout ce qui arrive du quotidien."],
+  ["02", "L'agent comprend", "Il lit, extrait les montants et les dates, mesure l'urgence et repère ce qui cloche. Puis il oublie le document."],
   ["03", "Vous validez", "Vous recevez une action claire et un courrier prêt à relire. Rien ne part sans votre accord."],
 ] as const;
 
@@ -30,8 +31,8 @@ const FEATURES = [
   { icon: FileSearch, title: "Lecture complète", text: "PDF, scans et photos : nom de l'organisme, montant, référence, échéance, pénalités." },
   { icon: BellRing, title: "Échéances suivies", text: "Impôts, assurances, mutuelles, renouvellements : des rappels avant qu'il soit trop tard." },
   { icon: PiggyBank, title: "Économies détectées", text: "Abonnements oubliés, doublons, hausses de tarif : chiffrés par mois et par an." },
-  { icon: PenLine, title: "Courriers prêts à valider", text: "Résiliation, contestation, remboursement, relance : générés, relus par vous, exportés en PDF." },
-  { icon: Mail, title: "Votre adresse personnelle", text: "Transférez un email : l'agent extrait les pièces jointes et classe tout automatiquement." },
+  { icon: PenLine, title: "Courriers prêts à valider", text: "Résiliation, contestation, remboursement : générés pour vous, à relire et télécharger. Rien n'est gardé." },
+  { icon: Mail, title: "Votre adresse personnelle", text: "Transférez un email : l'agent analyse les pièces jointes sans jamais les conserver." },
   { icon: Users, title: "Pour tout le foyer", text: "Conjoint, enfants, proches : des profils et des permissions, un espace strictement isolé." },
 ] as const;
 
@@ -131,16 +132,16 @@ export default function HomePage() {
         <div className="container-x">
           <Reveal>
             <div className="grid gap-10 lg:grid-cols-[1fr_1fr]">
-              <h2 className="display-lg text-white">Vos documents sont ce que vous avez de plus privé.</h2>
-              <p className="max-w-[46ch] text-[18px] text-white/60">Nous les traitons comme tels : isolés par foyer, chiffrés, hébergés en Europe, jamais revendus.</p>
+              <h2 className="display-lg text-white">Le plus sûr des documents, c'est celui qu'on ne garde pas.</h2>
+              <p className="max-w-[46ch] text-[18px] text-white/60">Vos fichiers sont analysés puis oubliés. Nous ne stockons ni vos documents, ni leur texte, ni vos courriers.</p>
             </div>
           </Reveal>
           <div className="mt-20 grid gap-px overflow-hidden rounded-[20px] bg-white/10 sm:grid-cols-2 lg:grid-cols-4">
             {[
-              [Lock, "Chiffrement par foyer", "Une clé de chiffrement propre à chaque foyer, jamais partagée."],
-              [ShieldCheck, "Isolation stricte", "Vos données sont inaccessibles aux autres foyers, y compris en cas d'erreur logicielle."],
-              [ServerCog, "Hébergé en Europe", "Données et traitements dans l'Union européenne, conformité RGPD."],
-              [Users, "Vous gardez la main", "Aucun courrier n'est envoyé sans votre validation. Export et suppression en un clic."],
+              [Lock, "Aucun fichier conservé", "Analysés en mémoire puis oubliés : ni document, ni texte, ni courrier stocké."],
+              [ShieldCheck, "Données minimales", "Seuls l'organisme, les dates et les montants utiles à vos rappels sont gardés. Jamais un IBAN."],
+              [ServerCog, "Hébergé en Europe", "Traitements dans l'Union européenne, conformité RGPD dès la conception."],
+              [Users, "Vous gardez la main", "Aucun courrier n'est envoyé sans votre validation. Suppression de vos données en un clic."],
             ].map(([Icon, t, d]) => {
               const I = Icon as typeof Lock;
               return (

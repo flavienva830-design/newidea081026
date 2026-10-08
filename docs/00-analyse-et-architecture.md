@@ -50,8 +50,8 @@ Les choix du brief sont conservés sauf quand ils posent un problème réel. Les
 | D4 | Email entrant | Resend | **Resend pour l'envoi uniquement**. Pour la réception, valider Resend Inbound **ou** Postmark / Cloudflare Email Routing | Je n'ai pas vérifié que Resend couvre la réception de façon fiable à grande échelle ; à tester avant d'engager le design |
 | D5 | Backend | Next.js API ou NestJS | **Next.js (Route Handlers) + packages métier isolés** ; NestJS non retenu | Un seul déploiement web ; la logique vit dans `packages/*` et reste extractible si besoin |
 | D6 | Base de données | PostgreSQL + Prisma | **Supabase Postgres (région UE) + Prisma**, Row-Level Security activée en défense en profondeur | Isolation famille/utilisateur garantie même en cas de bug applicatif |
-| D7 | OCR | « OCR complet » | **Extraction de texte PDF natif d'abord, vision LLM en repli** pour scans/photos ; évaluer Mistral OCR (UE) | Réduit fortement le coût : la plupart des PDF contiennent déjà du texte |
-| D8 | Envoi des courriers | « envoi » | **MVP : export PDF + envoi email depuis l'adresse de l'utilisateur. V2 : recommandé électronique / postal via un prestataire** | L'envoi recommandé a une valeur juridique et implique un partenaire agréé |
+| D7 | OCR | « OCR complet » | **Extraction de texte PDF natif d'abord, vision LLM en repli** pour scans/photos ; évaluer Mistral OCR (UE) ; **tout en mémoire** | Réduit fortement le coût ; rien n'est écrit sur disque |
+| D8 | Envoi des courriers | « envoi » | **MVP : courrier affiché puis téléchargé en PDF par l'utilisateur (non conservé). V2 : envoi recommandé électronique / postal via un prestataire, sans archive** | L'envoi recommandé a une valeur juridique et implique un partenaire agréé |
 | D9 | Repo | — | **Monorepo pnpm + Turborepo** | Web, worker, base et IA partagent des types sans duplication |
 
 ---
@@ -60,6 +60,31 @@ Les choix du brief sont conservés sauf quand ils posent un problème réel. Les
 - **D2 affiné : Better Auth au lieu d'Auth.js v5.** Auth.js v5 est toujours en bêta et n'offre ni MFA ni anti-abus intégrés ; son équipe est désormais rattachée à Better Auth. Better Auth fournit la 2FA TOTP, les liens magiques, les sessions par appareil et la limitation de débit, avec nos données dans notre base UE. Le principe validé (identités dans notre base européenne, pas de Clerk) est conservé.
 - **Rôles Postgres** : `mai_app` (soumis à la RLS), `mai_service` (worker, webhooks, admin) et le propriétaire (migrations seulement).
 - **Quota Famille** : le brief ne fixe pas de plafond documentaire ; 1 000 documents/mois par foyer retenus provisoirement.
+
+## 2 bis. Décision D10 : rétention minimale (remplace tout stockage de documents)
+
+**Décision du porteur du projet :** aucun fichier n'est stocké. Le document est analysé, le résultat est présenté, puis le contenu est oublié.
+Option retenue parmi trois : *données minimales* (on garde seulement l'essentiel extrait, chiffrable et supprimable), plutôt que « rien côté serveur » (plus de rappels ni d'agent proactif) ou « stockage navigateur » (pas de rappels email ni de partage famille).
+
+**Ce qui n'est jamais conservé** : fichier, texte intégral (OCR ou natif), courriers générés, résumés, extraits, noms de fichiers, empreintes, versions.
+**Ce qui est conservé** (validé par `PersistableAnalysis`, schéma strict) : organisme, nature du document, libellé court, montant, dates limites, économies repérées et actions proposées (textes ≤ 160 à 300 caractères, une ligne, sans IBAN / carte / n° de sécurité sociale / email / téléphone).
+
+**Garde-fous techniques**
+1. Base : tables `document_versions`, `document_texts`, `extractions`, `letters` supprimées ; contraintes `CHECK` de longueur sur chaque champ texte ; test d'intégration qui échoue si une colonne de type contenu (`storageKey`, `textEnc`, `bodyEnc`, `summary`…) réapparaît.
+2. Code : `PersistableAnalysis` (zod `.strict()`) est le seul format écrit en base ; `scrub()` masque tout contenu dans les journaux et la supervision d'erreurs.
+3. Aucun stockage objet : Supabase Storage et sa clé de service sont retirés de la configuration.
+4. **Les files de tâches ne transportent jamais de contenu** : BullMQ/Redis persiste les données des jobs. Les jobs (rappels, emails, quotas) ne portent que des identifiants.
+
+**Pipeline d'analyse (remplace la version asynchrone du §3)**
+`POST /api/analyze` (flux multipart, limite de taille appliquée pendant la lecture) → type réel vérifié (octets d'en-tête) → extraction **en mémoire** (texte PDF natif, DOCX, ou image envoyée directement au modèle de vision) → appel IA → sortie validée par `PersistableAnalysis` → écriture de l'enregistrement minimal → réponse avec le résultat détaillé (résumé, brouillons de courriers) **affichés seulement** → le contenu sort de la mémoire.
+Le résumé et les courriers vivent uniquement dans la réponse : l'utilisateur les lit ou les télécharge sur le moment. Conséquence assumée : pas de ré-analyse ni d'historique du contenu, pas de recherche plein texte, pas de versioning de documents, pas de « courriers enregistrés ».
+
+**Email entrant** : les pièces jointes sont analysées en mémoire, puis le message est supprimé chez le prestataire par son API. *Limite à vérifier :* le prestataire conserve le message brut pendant un délai propre ; on ne peut pas garantir « zéro » sur ce maillon.
+
+**Limite de responsabilité : ce que la rétention minimale change, et ce qu'elle ne change pas**
+- Elle réduit fortement le risque (pas de fuite de documents possible, surface d'incident très réduite) et simplifie la conformité.
+- Elle ne supprime **pas** la responsabilité : traiter temporairement des données personnelles, y compris de santé, fait de l'éditeur un *responsable de traitement* au sens du RGPD (base légale, information, sécurité, droits, analyse d'impact). Les données structurées conservées sont elles aussi des données personnelles. Le prestataire d'IA est un sous-traitant : contrat de sous-traitance, **conservation zéro** à obtenir contractuellement (par défaut, de nombreux fournisseurs gardent les requêtes quelques semaines pour la détection d'abus) et traitement dans l'UE.
+- Les conditions d'utilisation et les mentions « aide, pas conseil juridique » limitent le risque lié aux erreurs de l'IA mais ne l'effacent pas. Une relecture par un juriste avant lancement reste indispensable.
 
 ## 3. Architecture système
 
@@ -76,27 +101,25 @@ Les choix du brief sont conservés sauf quand ils posent un problème réel. Les
                               ▼             ▼
                  ┌────────────────┐   ┌───────────────────────────┐
                  │ Postgres (UE)  │◀──│ Worker Node (Fly, Paris)  │
-                 │ + RLS          │   │ BullMQ : ingest → OCR →   │
-                 └────────────────┘   │ analyse → échéances →     │
-                 ┌────────────────┐   │ économies → agent         │
-                 │ Supabase       │◀──│  │                        │
-                 │ Storage (UE)   │   └──┼────────────────────────┘
-                 └────────────────┘      ▼
-                                   LlmProvider (GPT-5 / mini, UE)
+                 │ + RLS          │   │ BullMQ : rappels, emails, │
+                 │ données        │   │ quotas (jobs SANS contenu)│
+                 │ minimales      │   └───────────────────────────┘
+                 └────────────────┘
+        Analyse : requête → mémoire → LlmProvider (GPT-5 / mini, UE, rétention zéro) → oubli
+                  (aucun disque, aucune file, aucun stockage objet)
         Stripe ──webhook──▶ Next.js          Resend ──▶ emails
         Sentry · PostHog · logs structurés ◀── web + worker
 ```
 
 ### Pipeline d'un document (asynchrone)
-`upload` → antivirus + validation de type réel (magic bytes) → stockage chiffré → job `ingest` → texte natif ou OCR → job `classify` (mini) → job `extract` (mini, JSON strict) → job `analyze` (GPT-5 si urgence/risque élevé) → `deadlines` + `savings` → création d'**actions recommandées** → notification.
-Chaque étape est idempotente, rejouable, tracée (`ai_runs`) et limitée par quota.
+*Remplacé par la décision D10 (§2 bis) :* analyse synchrone en mémoire, aucun stockage de contenu. Seuls les rappels, emails et quotas passent par la file, sans contenu. Chaque appel IA est tracé (`ai_runs` : modèle, tokens, coût, latence, jamais le contenu) et limité par quota.
 
 ### Pourquoi cela tient de 100 à 100 000 utilisateurs
 - Le web est sans état ; le travail lourd est dans la file.
 - Les workers montent en charge horizontalement (concurrence par type de job).
 - Les index et le partitionnement (`documents`, `audit_logs` par mois) sont prévus dès le départ.
 - Les limites de débit et les quotas protègent le coût IA, qui est le vrai goulot.
-- Point de vigilance : Supabase Storage et le pool de connexions Postgres (PgBouncer) à surveiller au-delà de ~10 000 utilisateurs.
+- Point de vigilance : le pool de connexions Postgres (PgBouncer) à surveiller au-delà de ~10 000 utilisateurs.
 
 ---
 
@@ -179,9 +202,9 @@ Règle : toute table métier porte `householdId`, indexé et couvert par la RLS.
 ---
 
 ## 8. RGPD (résumé)
-- Les documents contiennent des **données de santé et financières** (mutuelle, impôts) : consentement explicite et **AIPD (analyse d'impact) obligatoire avant le lancement**.
+- Les documents contiennent des **données de santé et financières** (mutuelle, impôts) : consentement explicite et **AIPD (analyse d'impact) obligatoire avant le lancement**, même sans stockage (le traitement temporaire reste un traitement).
 - Hébergement UE de bout en bout ; liste des sous-traitants et DPA signés (hébergeur, fournisseur d'IA avec rétention zéro, Stripe, Resend).
-- Export complet (ZIP : documents + JSON), suppression totale avec purge des sauvegardes sous délai défini, anonymisation des métriques, durée de conservation limitée, journal d'audit.
+- Export des données structurées (JSON) et suppression totale avec purge des sauvegardes sous délai défini ; plus de documents à exporter puisqu'aucun n'est conservé ; anonymisation des métriques ; journal d'audit sans contenu.
 - L'IA est présentée comme aide, **pas comme conseil juridique** ; mentions visibles sur les courriers type « mise en demeure ».
 
 ---

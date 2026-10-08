@@ -11,7 +11,8 @@ export default function Page() {
       <h2>Données traitées</h2>
       <ul>
         <li>Compte : nom, adresse email, mot de passe (stocké sous forme hachée), journal de connexion (adresse IP pseudonymisée, pays, appareil).</li>
-        <li>Documents que vous transférez et informations qui en sont extraites. Ils peuvent contenir des données de santé ou financières : traitées uniquement avec votre <strong>consentement explicite</strong>.</li>
+        <li><strong>Documents que vous transférez : traités en mémoire le temps de l'analyse, jamais conservés.</strong> Ni le fichier, ni son texte, ni les courriers générés ne sont enregistrés. Ils peuvent contenir des données de santé ou financières : traitées uniquement avec votre <strong>consentement explicite</strong>.</li>
+        <li>Données structurées issues de l'analyse, conservées pour vos rappels : organisme, nature du document, dates limites, montants, économies repérées. Jamais de numéro de compte, de carte ou de sécurité sociale. Vous pouvez les supprimer à tout moment.</li>
         <li>Facturation : gérée par notre prestataire de paiement ; nous ne stockons pas vos données bancaires.</li>
       </ul>
       <h2>Finalités et bases légales</h2>
@@ -22,11 +23,11 @@ export default function Page() {
         <li>Actualités du produit (consentement, facultatif).</li>
       </ul>
       <h2>Sécurité</h2>
-      <p>Données hébergées dans l'Union européenne ; chiffrement en transit et au repos ; une clé de chiffrement propre à chaque foyer ; isolation stricte entre foyers ; journal d'audit.</p>
+      <p>Minimisation par conception : aucun fichier ni texte de document n'est stocké. Données restantes hébergées dans l'Union européenne ; chiffrement en transit et au repos ; isolation stricte entre foyers ; journal d'audit ; aucun contenu de document dans les journaux techniques.</p>
       <h2>Intelligence artificielle</h2>
-      <p>Le contenu de vos documents est transmis à un prestataire d'IA situé dans l'Union européenne uniquement pour produire votre analyse. Il n'est ni conservé par ce prestataire ni utilisé pour entraîner des modèles. [À confirmer contractuellement avec le prestataire retenu.]</p>
+      <p>Le contenu de vos documents est transmis à un prestataire d'IA situé dans l'Union européenne uniquement pour produire votre analyse. Il n'est ni conservé par ce prestataire ni utilisé pour entraîner des modèles. [À confirmer contractuellement avec le prestataire retenu : conservation zéro et résidence des données dans l'Union européenne.]</p>
       <h2>Durée de conservation</h2>
-      <p>Pendant la durée de votre compte, puis suppression sous [x] jours après sa clôture. Journaux de sécurité : [durée].</p>
+      <p>Documents : aucune conservation (traitement en mémoire). Données structurées : jusqu'à leur suppression par vous ou la clôture de votre compte, puis effacement sous [x] jours. Journaux de sécurité : [durée].</p>
       <h2>Vos droits</h2>
       <p>Accès, rectification, effacement, limitation, portabilité, opposition et retrait du consentement : écrivez à [email]. Vous pouvez aussi saisir la CNIL (cnil.fr).</p>
       <h2>Sous-traitants</h2>

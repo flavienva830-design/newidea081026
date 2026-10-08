@@ -107,10 +107,23 @@ run("isolation par foyer (RLS)", () => {
     await expect(app.auditLog.delete({ where: { id: row.id } })).rejects.toThrow();
   });
 
-  it("un courrier SENT sans validation humaine est refusé", async () => {
-    const d = await admin.document.findFirstOrThrow({ where: { householdId: A } });
+  it("rétention minimale : aucune table ni colonne ne peut stocker un fichier, un texte ou un courrier", async () => {
+    const tables = await admin.$queryRaw<{ table_name: string }[]>`SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'`;
+    const names = tables.map((t) => t.table_name);
+    for (const forbidden of ["document_versions", "document_texts", "extractions", "letters"]) expect(names).not.toContain(forbidden);
+    const cols = await admin.$queryRaw<{ column_name: string }[]>`SELECT DISTINCT column_name FROM information_schema.columns WHERE table_schema = 'public'`;
+    const columns = cols.map((c) => c.column_name.toLowerCase());
+    for (const f of ["storagekey", "textenc", "bodyenc", "recipientenc", "pdfkey", "dataenc", "summary", "sha256", "originalname", "mimetype", "archivekey"]) {
+      // archiveKey (export RGPD) est la seule clé de fichier tolérée : archive éphémère générée à la demande.
+      if (f === "archivekey") continue;
+      expect(columns).not.toContain(f);
+    }
+  });
+
+  it("les champs texte sont plafonnés : impossible d'y stocker un extrait de document", async () => {
+    await expect(admin.document.create({ data: { householdId: A, source: "WEB_UPLOAD", title: "x".repeat(500) } })).rejects.toThrow();
     await expect(
-      admin.letter.create({ data: { householdId: A, documentId: d.id, kind: "FREE", status: "SENT", subject: "s", bodyEnc: Buffer.from("x") } }),
+      admin.saving.create({ data: { householdId: A, kind: "FEE", title: "t", rationale: "y".repeat(2000), monthlyCents: 1, annualCents: 12, confidence: 0.5 } }),
     ).rejects.toThrow();
   });
 });

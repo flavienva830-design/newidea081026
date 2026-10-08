@@ -16,7 +16,7 @@ const prod = {
   REDIS_URL: "redis://localhost:6379",
   RESEND_API_KEY: "re_x", EMAIL_FROM: "Mon Agent IA <no-reply@monagentia.com>",
   STRIPE_SECRET_KEY: "sk_live_x", STRIPE_WEBHOOK_SECRET: "whsec_x", OPENAI_API_KEY: "sk-x",
-  SUPABASE_URL: "https://x.supabase.co", SUPABASE_SERVICE_ROLE_KEY: "k", TURNSTILE_SECRET_KEY: "t", SENTRY_DSN: "https://x@sentry.io/1",
+  TURNSTILE_SECRET_KEY: "t", SENTRY_DSN: "https://x@sentry.io/1",
 };
 
 describe("validation de l'environnement", () => {

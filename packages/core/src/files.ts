@@ -1,5 +1,3 @@
-import { randomUUID } from "node:crypto";
-
 export const ALLOWED_TYPES = {
   "application/pdf": { ext: "pdf", max: 20 * 1024 * 1024 },
   "image/jpeg": { ext: "jpg", max: 15 * 1024 * 1024 },
@@ -29,16 +27,6 @@ export function validateUpload(buf: Uint8Array, declaredMime?: string): FileChec
   if (buf.length > rule.max) return { ok: false, reason: "too_large" };
   if (declaredMime && declaredMime !== mime) return { ok: false, reason: "type_mismatch" };
   return { ok: true, mime, ext: rule.ext };
-}
-
-/**
- * Clé de stockage régénérée côté serveur : le nom d'origine n'y apparaît jamais
- * (anti path traversal, anti collision, pas de fuite d'information personnelle dans l'URL).
- */
-export function storageKey(householdId: string, documentId: string, version: number, ext: string): string {
-  if (!/^[0-9a-f-]{36}$/i.test(householdId) || !/^[0-9a-f-]{36}$/i.test(documentId)) throw new Error("identifiant invalide");
-  if (!/^[a-z0-9]{2,5}$/.test(ext)) throw new Error("extension invalide");
-  return `${householdId}/${documentId}/v${version}-${randomUUID()}.${ext}`;
 }
 
 /** Nom d'origine assaini, pour affichage uniquement. */

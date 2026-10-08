@@ -34,8 +34,6 @@ const schema = z.object({
   STRIPE_SECRET_KEY: z.string().optional(),
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
   OPENAI_API_KEY: z.string().optional(),
-  SUPABASE_URL: url.optional(),
-  SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
   TURNSTILE_SECRET_KEY: z.string().optional(),
@@ -55,8 +53,6 @@ const REQUIRED_IN_PRODUCTION = [
   "STRIPE_SECRET_KEY",
   "STRIPE_WEBHOOK_SECRET",
   "OPENAI_API_KEY",
-  "SUPABASE_URL",
-  "SUPABASE_SERVICE_ROLE_KEY",
   "TURNSTILE_SECRET_KEY",
   "SENTRY_DSN",
 ] as const;

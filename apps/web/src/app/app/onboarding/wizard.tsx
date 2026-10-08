@@ -61,9 +61,9 @@ export function OnboardingWizard({ initialStep, name, householdName, plan }: { i
             {step === 0 && (
               <section>
                 <h1 className="display-md">Vos documents, vos règles.</h1>
-                <p className="mt-3 text-[15px] text-soft">Pour analyser vos courriers, l'agent traite des informations sensibles (santé, finances). Nous ne le faisons qu'avec votre accord explicite, que vous pouvez retirer à tout moment.</p>
+                <p className="mt-3 text-[15px] text-soft">Pour analyser vos courriers, l'agent traite des informations sensibles (santé, finances). Vos fichiers sont analysés en mémoire puis oubliés : nous ne les stockons pas. Nous ne le faisons qu'avec votre accord explicite, que vous pouvez retirer à tout moment.</p>
                 <div className="mt-8 space-y-3">
-                  <Consent checked={sensitive} onChange={setSensitive} title="Traitement de données sensibles" text="J'autorise l'analyse des documents que je transfère, y compris ceux contenant des données de santé ou financières." required />
+                  <Consent checked={sensitive} onChange={setSensitive} title="Traitement de données sensibles" text="J'autorise l'analyse des documents que je transfère, y compris ceux contenant des données de santé ou financières. Les fichiers ne sont pas conservés." required />
                   <Consent checked={ai} onChange={setAi} title="Analyse par intelligence artificielle" text="J'autorise l'envoi du contenu de mes documents à un prestataire d'IA situé dans l'Union européenne, sans conservation ni réutilisation." required />
                   <Consent checked={marketing} onChange={setMarketing} title="Actualités du produit" text="Recevoir occasionnellement des nouveautés par email (facultatif)." />
                 </div>
@@ -120,7 +120,7 @@ export function OnboardingWizard({ initialStep, name, householdName, plan }: { i
                 <h1 className="display-md">Tout est prêt.</h1>
                 <p className="mt-3 text-[15px] text-soft">Voici ce que votre agent fera pour vous.</p>
                 <ul className="mt-8 space-y-3">
-                  {[[FileText, "Il lit vos documents", "Dès qu'ils arrivent, il extrait montants, dates et échéances."], [Bell, "Il vous prévient", "Des rappels avant chaque date limite, par email et dans l'application."], [Sparkles, "Il propose, vous décidez", "Économies, résiliations, contestations : prêts à valider."], [PenLine, "Il prépare vos courriers", "Rien n'est envoyé sans votre accord."]].map(([I, t, d]) => {
+                  {[[FileText, "Il lit puis oublie", "Il extrait montants, dates et échéances, sans conserver vos fichiers."], [Bell, "Il vous prévient", "Des rappels avant chaque date limite, par email et dans l'application."], [Sparkles, "Il propose, vous décidez", "Économies, résiliations, contestations : prêts à valider."], [PenLine, "Il prépare vos courriers", "Vous les relisez et les téléchargez. Rien n'est gardé ni envoyé sans votre accord."]].map(([I, t, d]) => {
                     const Icon = I as typeof Bell;
                     return (
                       <li key={t as string} className="flex items-start gap-4 rounded-card border border-line p-4">

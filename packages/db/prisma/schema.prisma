@@ -2,8 +2,9 @@
 //
 // Conventions
 //  - Toute table métier porte "householdId" : isolement strict par foyer (+ RLS Postgres, voir migrations).
-//  - Les contenus sensibles (texte intégral, corps de courriers, données extraites) sont chiffrés
-//    au niveau applicatif (enveloppe : clé de données par foyer) et stockés en Bytes.
+//  - RÉTENTION MINIMALE : aucun fichier, aucun texte intégral, aucun courrier n'est jamais stocké.
+//    Les documents sont analysés en mémoire puis oubliés ; seules subsistent des données structurées
+//    minimales (organisme, échéance, montant, économie détectée) que l'utilisateur peut supprimer.
 //  - Les tables d'authentification suivent les noms attendus par Better Auth.
 
 generator client {
@@ -38,15 +39,6 @@ enum ProfileRelation {
   OTHER
 }
 
-enum DocumentStatus {
-  UPLOADED
-  SCANNING
-  QUARANTINED
-  PROCESSING
-  READY
-  FAILED
-}
-
 enum DocumentSource {
   WEB_UPLOAD
   EMAIL
@@ -66,12 +58,6 @@ enum DocumentKind {
   OFFICIAL_LETTER
   PAYSLIP
   OTHER
-}
-
-enum OcrMethod {
-  NATIVE_TEXT
-  VISION_LLM
-  OCR_ENGINE
 }
 
 enum DeadlineKind {
@@ -156,30 +142,6 @@ enum ActionStatus {
   DONE
   DISMISSED
   EXPIRED
-}
-
-enum LetterKind {
-  CANCELLATION
-  CONTESTATION
-  COMPLAINT
-  REFUND_REQUEST
-  FORMAL_NOTICE
-  FREE
-}
-
-// Un courrier n'est jamais envoyé sans passer par VALIDATED (validation explicite de l'utilisateur).
-enum LetterStatus {
-  DRAFT
-  VALIDATED
-  SENT
-  CANCELLED
-}
-
-enum LetterChannel {
-  PDF_EXPORT
-  EMAIL
-  REGISTERED_EMAIL
-  POSTAL
 }
 
 enum InboundEmailStatus {
@@ -382,7 +344,6 @@ model Household {
   detectedSubscriptions DetectedSubscription[]
   savings               Saving[]
   actions               RecommendedAction[]
-  letters               Letter[]
   notifications         Notification[]
   inboundEmails         InboundEmail[]
   aiRuns                AiRun[]
@@ -447,81 +408,32 @@ model Profile {
 // ─────────────────────────── Documents ───────────────────────────
 
 model Document {
-  id             String         @id @default(uuid(7)) @db.Uuid
-  householdId    String         @db.Uuid
-  household      Household      @relation(fields: [householdId], references: [id], onDelete: Cascade)
-  profileId      String?        @db.Uuid
-  profile        Profile?       @relation(fields: [profileId], references: [id], onDelete: SetNull)
-  uploadedById   String?
-  source         DocumentSource
-  inboundEmailId String?        @db.Uuid
-  status         DocumentStatus @default(UPLOADED)
-  kind           DocumentKind   @default(UNKNOWN)
-  title          String
-  organization   String?
-  summary        String?
-  urgencyScore   Int? // 0..100
-  amountCents    Int?
-  currency       String?        @default("EUR")
-  documentDate   DateTime?
-  failureReason  String?
-  currentVersion Int            @default(1)
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
-  deletedAt      DateTime?
-
-  versions     DocumentVersion[]
-  text         DocumentText?
-  extractions  Extraction[]
+  id           String              @id @default(uuid(7)) @db.Uuid
+  householdId  String              @db.Uuid
+  household    Household           @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  profileId    String?             @db.Uuid
+  profile      Profile?            @relation(fields: [profileId], references: [id], onDelete: SetNull)
+  uploadedById String?
+  source       DocumentSource
+  kind         DocumentKind        @default(UNKNOWN)
+  title        String // libellé générique court (ex. « Facture EDF »), jamais un nom de fichier ni un extrait du document
+  organization String?
+  urgencyScore Int? // 0..100
+  amountCents  Int?
+  currency     String?             @default("EUR")
+  documentDate DateTime?
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  deletedAt    DateTime?
   tags         DocumentTag[]
   deadlines    Deadline[]
   savings      Saving[]
   actions      RecommendedAction[]
-  letters      Letter[]
   aiRuns       AiRun[]
-  inboundEmail InboundEmail?       @relation(fields: [inboundEmailId], references: [id], onDelete: SetNull)
 
   @@index([householdId, createdAt])
   @@index([householdId, kind])
-  @@index([householdId, status])
   @@map("documents")
-}
-
-model DocumentVersion {
-  id           String   @id @default(uuid(7)) @db.Uuid
-  householdId  String   @db.Uuid
-  documentId   String   @db.Uuid
-  document     Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
-  version      Int
-  storageKey   String   @unique // chemin dans le stockage ; le nom d'origine n'est jamais utilisé
-  originalName String
-  mimeType     String
-  sizeBytes    Int
-  sha256       String
-  scanStatus   String   @default("pending") // pending | clean | infected | error
-  createdById  String?
-  createdAt    DateTime @default(now())
-
-  @@unique([documentId, version])
-  @@index([householdId, sha256])
-  @@map("document_versions")
-}
-
-// Texte intégral (chiffré) extrait du document.
-model DocumentText {
-  id          String    @id @default(uuid(7)) @db.Uuid
-  householdId String    @db.Uuid
-  documentId  String    @unique @db.Uuid
-  document    Document  @relation(fields: [documentId], references: [id], onDelete: Cascade)
-  version     Int
-  textEnc     Bytes
-  method      OcrMethod
-  language    String?
-  pageCount   Int?
-  createdAt   DateTime  @default(now())
-
-  @@index([householdId])
-  @@map("document_texts")
 }
 
 model Tag {
@@ -546,23 +458,6 @@ model DocumentTag {
   @@id([documentId, tagId])
   @@index([householdId])
   @@map("document_tags")
-}
-
-// Données structurées extraites par l'IA (chiffrées), validées par schéma.
-model Extraction {
-  id            String   @id @default(uuid(7)) @db.Uuid
-  householdId   String   @db.Uuid
-  documentId    String   @db.Uuid
-  document      Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
-  version       Int
-  schemaVersion String
-  dataEnc       Bytes
-  confidence    Float?
-  aiRunId       String?  @db.Uuid
-  createdAt     DateTime @default(now())
-
-  @@index([householdId, documentId])
-  @@map("extractions")
 }
 
 // ─────────────────────────── Échéances ───────────────────────────
@@ -678,40 +573,12 @@ model RecommendedAction {
   resolvedAt  DateTime?
   createdAt   DateTime     @default(now())
 
-  letters Letter[]
-
   @@unique([householdId, dedupeKey])
   @@index([householdId, status, priority])
   @@map("recommended_actions")
 }
 
 // ───────────────────────────── Courriers ─────────────────────────────
-
-model Letter {
-  id            String             @id @default(uuid(7)) @db.Uuid
-  householdId   String             @db.Uuid
-  household     Household          @relation(fields: [householdId], references: [id], onDelete: Cascade)
-  documentId    String?            @db.Uuid
-  document      Document?          @relation(fields: [documentId], references: [id], onDelete: SetNull)
-  actionId      String?            @db.Uuid
-  action        RecommendedAction? @relation(fields: [actionId], references: [id], onDelete: SetNull)
-  kind          LetterKind
-  status        LetterStatus       @default(DRAFT)
-  subject       String
-  bodyEnc       Bytes
-  recipientEnc  Bytes?
-  pdfKey        String?
-  createdById   String?
-  validatedById String?
-  validatedAt   DateTime?
-  sentAt        DateTime?
-  sentVia       LetterChannel?
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
-
-  @@index([householdId, status])
-  @@map("letters")
-}
 
 // ─────────────────────────── Notifications ───────────────────────────
 
@@ -765,14 +632,9 @@ model InboundEmail {
   householdId       String             @db.Uuid
   household         Household          @relation(fields: [householdId], references: [id], onDelete: Cascade)
   providerMessageId String
-  fromDomain        String?
-  subject           String?
   status            InboundEmailStatus @default(RECEIVED)
-  rejectReason      String?
   attachmentCount   Int                @default(0)
   receivedAt        DateTime           @default(now())
-
-  documents Document[]
 
   @@unique([householdId, providerMessageId])
   @@map("inbound_emails")
@@ -833,12 +695,13 @@ model StripeEvent {
 }
 
 model UsageCounter {
-  id           String    @id @default(uuid(7)) @db.Uuid
-  householdId  String    @db.Uuid
-  household    Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
-  period       String // AAAA-MM
-  documents    Int       @default(0)
-  aiCostMicros BigInt    @default(0)
+  id               String    @id @default(uuid(7)) @db.Uuid
+  householdId      String    @db.Uuid
+  household        Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  period           String // AAAA-MM
+  documents        Int       @default(0)
+  lettersGenerated Int       @default(0)
+  aiCostMicros     BigInt    @default(0)
 
   @@unique([householdId, period])
   @@map("usage_counters")

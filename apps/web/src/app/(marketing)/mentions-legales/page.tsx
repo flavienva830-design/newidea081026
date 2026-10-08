@@ -11,7 +11,7 @@ export default function Page() {
       <h2>Directeur de la publication</h2>
       <p>[Nom et qualité].</p>
       <h2>Hébergement</h2>
-      <p>[Hébergeur de l'application], [adresse], situé dans l'Union européenne. Base de données et fichiers : [fournisseur et région].</p>
+      <p>[Hébergeur de l'application], [adresse], situé dans l'Union européenne. Base de données (données structurées uniquement ; aucun fichier n'est stocké) : [fournisseur et région].</p>
       <h2>Nature du service</h2>
       <p>Mon Agent IA est un outil d'organisation et d'aide à la rédaction. Il ne fournit <strong>aucun conseil juridique, fiscal ou financier</strong>. Les analyses sont produites automatiquement et peuvent comporter des erreurs : l'utilisateur reste responsable de ses démarches et valide chaque courrier avant envoi.</p>
       <h2>Propriété intellectuelle</h2>

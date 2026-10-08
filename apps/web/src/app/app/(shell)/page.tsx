@@ -21,7 +21,7 @@ export default async function DashboardPage() {
   const first = session.user.name.split(" ")[0];
 
   const kpis = [
-    { label: "Documents", value: String(data.documents), icon: FileText },
+    { label: "Documents analysés", value: String(data.documents), icon: FileText },
     { label: "Actions à réaliser", value: String(data.actionsToDo), icon: Sparkles },
     { label: "Échéances à 30 jours", value: String(data.deadlines30d), icon: CalendarClock },
     { label: "Économies détectées / an", value: euro(data.savingsAnnualCents), icon: PiggyBank },
@@ -58,7 +58,7 @@ export default async function DashboardPage() {
               <div className="mt-6 rounded-card bg-subtle p-8 text-center">
                 <Sparkles className="mx-auto size-6 text-accent-strong" strokeWidth={1.5} />
                 <p className="mt-4 text-[15px] font-medium">Aucune action pour le moment</p>
-                <p className="mx-auto mt-1 max-w-[40ch] text-[14px] text-soft">Dès que vous transférerez un document, l'agent détectera les échéances, les hausses de tarif et les économies possibles.</p>
+                <p className="mx-auto mt-1 max-w-[40ch] text-[14px] text-soft">Dès que vous transférerez un document, l'agent détectera les échéances, les hausses de tarif et les économies possibles, puis oubliera le fichier.</p>
               </div>
             ) : (
               <ul className="mt-6 divide-y divide-line">
@@ -100,7 +100,7 @@ export default async function DashboardPage() {
           </Reveal>
           <Reveal delay={0.16}>
             <section className="flex items-start gap-3 rounded-[20px] bg-subtle p-6 text-[13px] text-soft">
-              <ShieldCheck className="mt-0.5 size-4 shrink-0 text-accent-strong" /> <p>Vos données sont isolées et chiffrées. Aucun courrier n'est envoyé sans votre validation.</p>
+              <ShieldCheck className="mt-0.5 size-4 shrink-0 text-accent-strong" /> <p>Vos fichiers ne sont jamais conservés. Aucun courrier n'est envoyé sans votre validation.</p>
             </section>
           </Reveal>
         </div>

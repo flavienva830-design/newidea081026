@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { sanitizeDisplayName, sniffMime, storageKey, validateUpload } from "../src/files.ts";
+import { sanitizeDisplayName, sniffMime, validateUpload } from "../src/files.ts";
 
 const pdf = Buffer.from("%PDF-1.7\n...");
 const png = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0]);
@@ -24,14 +24,6 @@ describe("validation des fichiers", () => {
   it("refuse les fichiers trop volumineux", () => {
     const big = Buffer.concat([pdf, Buffer.alloc(21 * 1024 * 1024)]);
     expect(validateUpload(big)).toEqual({ ok: false, reason: "too_large" });
-  });
-  it("clé de stockage sûre et imprévisible", () => {
-    const h = "00000000-0000-7000-8000-000000000001";
-    const k1 = storageKey(h, h, 1, "pdf");
-    expect(k1).toMatch(/^[0-9a-f-]{36}\/[0-9a-f-]{36}\/v1-[0-9a-f-]{36}\.pdf$/);
-    expect(k1).not.toBe(storageKey(h, h, 1, "pdf"));
-    expect(() => storageKey("../etc", h, 1, "pdf")).toThrow();
-    expect(() => storageKey(h, h, 1, "p/df")).toThrow();
   });
   it("assainit le nom affiché (path traversal, caractères de contrôle)", () => {
     expect(sanitizeDisplayName("../../etc/passwd")).toBe("passwd");

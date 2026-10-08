@@ -19,8 +19,8 @@ export function AuthShell({ title, subtitle, children, footer }: {
         <div className="absolute inset-0 bg-[radial-gradient(60%_50%_at_70%_30%,rgba(73,168,255,0.35),transparent),radial-gradient(50%_40%_at_20%_80%,rgba(73,168,255,0.18),transparent)]" />
         <div className="relative flex h-full flex-col justify-end gap-6 p-16">
           {[
-            [ShieldCheck, "Isolé par foyer", "Vos données sont inaccessibles aux autres comptes."],
-            [Lock, "Chiffré", "Une clé de chiffrement propre à votre foyer."],
+            [ShieldCheck, "Données minimales", "Seules les dates et montants utiles sont gardés."],
+            [Lock, "Aucun fichier conservé", "Vos documents sont analysés puis oubliés."],
             [Server, "Hébergé en Europe", "Conformité RGPD dès la conception."],
           ].map(([I, t, d]) => {
             const Icon = I as typeof Lock;

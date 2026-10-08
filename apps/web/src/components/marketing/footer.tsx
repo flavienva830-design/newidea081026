@@ -12,7 +12,7 @@ export function Footer() {
       <div className="container-x grid gap-12 py-16 md:grid-cols-[1.4fr_repeat(3,1fr)]">
         <div>
           <Logo />
-          <p className="mt-4 max-w-[34ch] text-[14px] text-soft">L'assistant administratif des particuliers et des familles. Vos documents restent en Europe.</p>
+          <p className="mt-4 max-w-[34ch] text-[14px] text-soft">L'assistant administratif des particuliers et des familles. Vos fichiers ne sont jamais conservés.</p>
         </div>
         {cols.map((c) => (
           <nav key={c.title} aria-label={c.title}>
