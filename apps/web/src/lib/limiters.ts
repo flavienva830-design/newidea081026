@@ -11,7 +11,10 @@ function store(): RateLimitStore {
   return new RedisStore(g.__redis);
 }
 
-export type Limiters = Record<"loginIp" | "loginAccount" | "signupIp" | "magic" | "reset" | "totp" | "upload" | "api", RateLimiter>;
+export type Limiters = Record<
+  "loginIp" | "loginAccount" | "signupIp" | "magic" | "reset" | "totp" | "upload" | "api" | "invite" | "inviteHousehold" | "inviteRecipient" | "inviteAccept",
+  RateLimiter
+>;
 
 /** Limiteurs partagés (Redis en production, mémoire en développement). */
 export function limiters(): Limiters {
@@ -27,6 +30,10 @@ export function limiters(): Limiters {
       totp: new RateLimiter(s, POLICIES.totpByUser),
       upload: new RateLimiter(s, POLICIES.uploadByHousehold),
       api: new RateLimiter(s, POLICIES.apiByUser),
+      invite: new RateLimiter(s, POLICIES.inviteByUser),
+      inviteHousehold: new RateLimiter(s, POLICIES.inviteByHousehold),
+      inviteRecipient: new RateLimiter(s, POLICIES.inviteByRecipient),
+      inviteAccept: new RateLimiter(s, POLICIES.inviteAcceptByUser),
     };
   }
   return g.__limiters;

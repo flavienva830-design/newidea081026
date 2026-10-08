@@ -87,4 +87,11 @@ export const POLICIES = {
   totpByUser: { limit: 6, windowSec: 300 },
   apiByUser: { limit: 120, windowSec: 60 },
   uploadByHousehold: { limit: 30, windowSec: 60 },
+  // Invitations de membres : chaque envoi déclenche un email vers une adresse choisie par l'utilisateur (risque d'abus
+  // et de harcèlement) ; on borne donc par expéditeur, par foyer et par destinataire (clé = empreinte de l'adresse).
+  inviteByUser: { limit: 10, windowSec: 3600 },
+  inviteByHousehold: { limit: 30, windowSec: 86_400 },
+  inviteByRecipient: { limit: 3, windowSec: 86_400 },
+  // Tentatives d'acceptation d'un jeton d'invitation (le jeton fait 256 bits : on borne surtout la charge).
+  inviteAcceptByUser: { limit: 20, windowSec: 600 },
 } as const;
