@@ -3,6 +3,8 @@
 Assistant administratif IA pour particuliers et familles.
 
 - `docs/00-analyse-et-architecture.md` : analyse, décisions d'architecture, sécurité, roadmap.
+- `docs/01-exploitation-et-deploiement.md` : mise en ligne, variables d'environnement, supervision.
+- `docs/02-espace-famille.md` : foyers multiples, rôles, invitations, profils (modèle de sécurité).
 - `legacy/` : première landing statique (référence de contenu, sera remplacée par `apps/web`).
 - `packages/db` : schéma Prisma, migrations, RLS Postgres, isolation par foyer.
 - `packages/core` : chiffrement d'enveloppe, RBAC, limitation de débit, validation de fichiers, risque de connexion, plans/quotas.
