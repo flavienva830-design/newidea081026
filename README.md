@@ -8,6 +8,8 @@ Assistant administratif IA pour particuliers et familles.
 - `packages/core` : chiffrement d'enveloppe, RBAC, limitation de débit, validation de fichiers, risque de connexion, plans/quotas.
 - `packages/ai` : moteur d'analyse (extraction en mémoire PDF/DOCX/images, prompts versionnés, sortie JSON stricte, nettoyage, fournisseurs OpenAI et factice).
 - `packages/config` : validation de l'environnement.
+- `apps/worker` : tâches planifiées sans contenu (BullMQ) : envoi des rappels d'échéance. `pnpm --filter @mon-agent-ia/worker start` (nécessite `REDIS_URL` et `DATABASE_SERVICE_URL`).
+- `packages/mail` : transport d'emails (Resend) et gabarits.
 - `apps/web` : Next.js 15 (landing, authentification Better Auth avec double authentification, onboarding, tableau de bord, sécurité du compte).
 
 ## Développement local

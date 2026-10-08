@@ -5,7 +5,7 @@ const config: NextConfig = {
   distDir: process.env.NODE_ENV === "development" ? ".next-dev" : ".next",
   reactStrictMode: true,
   poweredByHeader: false,
-  transpilePackages: ["@mon-agent-ia/core", "@mon-agent-ia/config", "@mon-agent-ia/db", "@mon-agent-ia/ai"],
+  transpilePackages: ["@mon-agent-ia/core", "@mon-agent-ia/config", "@mon-agent-ia/db", "@mon-agent-ia/ai", "@mon-agent-ia/mail"],
   serverExternalPackages: ["pg", "@prisma/adapter-pg", "@prisma/client", "unpdf", "fflate"],
   experimental: { optimizePackageImports: ["lucide-react", "framer-motion"] },
   async headers() {

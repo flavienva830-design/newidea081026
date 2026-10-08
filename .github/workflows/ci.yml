@@ -34,6 +34,7 @@ jobs:
     env:
       TEST_ADMIN_URL: postgresql://postgres:postgres@localhost:5432/mai_test
       TEST_APP_URL: postgresql://mai_app:apppass@localhost:5432/mai_test
+      TEST_SERVICE_URL: postgresql://mai_service:svcpass@localhost:5432/mai_test
       TEST_REDIS_URL: redis://localhost:6379
       DATABASE_ADMIN_URL: postgresql://postgres:postgres@localhost:5432/mai_test
       # Application web (E2E) : APP_ENV=dev, boîte d'envoi de test activée, aucun secret réel.
@@ -58,7 +59,7 @@ jobs:
       - name: Appliquer les migrations
         run: pnpm db:migrate
       - name: Activer le rôle applicatif (test)
-        run: psql "$TEST_ADMIN_URL" -c "ALTER ROLE mai_app LOGIN PASSWORD 'apppass'"
+        run: psql "$TEST_ADMIN_URL" -c "ALTER ROLE mai_app LOGIN PASSWORD 'apppass'" -c "ALTER ROLE mai_service LOGIN PASSWORD 'svcpass'"
       - run: pnpm typecheck
       - run: pnpm test
       - name: Build de l'application

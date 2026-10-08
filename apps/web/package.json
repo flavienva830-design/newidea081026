@@ -27,11 +27,11 @@
     "qrcode": "^1.5.4",
     "react": "19.3.0",
     "react-dom": "19.3.0",
-    "resend": "6.32.1",
     "server-only": "0.0.1",
     "tailwind-merge": "3.7.0",
     "zod": "^4.0.0",
-    "@mon-agent-ia/ai": "workspace:*"
+    "@mon-agent-ia/ai": "workspace:*",
+    "@mon-agent-ia/mail": "workspace:*"
   },
   "devDependencies": {
     "@playwright/test": "1.56.1",
