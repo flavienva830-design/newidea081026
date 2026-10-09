@@ -4,7 +4,9 @@ Assistant administratif IA pour particuliers et familles.
 
 - `docs/00-analyse-et-architecture.md` : analyse, décisions d'architecture, sécurité, roadmap.
 - `docs/01-exploitation-et-deploiement.md` : mise en ligne, variables d'environnement, supervision.
-- `docs/02-espace-famille.md` : foyers multiples, rôles, invitations, profils (modèle de sécurité).
+- `docs/02-portail-administration.md` : portail interne (indicateurs, support, audit, RGPD), rôles d'équipe, définitions des indicateurs.
+- `docs/03-evaluation-ia.md` : banc d'essai de la qualité de l'analyse (`pnpm --filter @mon-agent-ia/ai eval`), seuils avant ouverture.
+- `docs/04-espace-famille.md` : foyers multiples, rôles, invitations, profils (modèle de sécurité).
 - `legacy/` : première landing statique (référence de contenu, sera remplacée par `apps/web`).
 - `packages/db` : schéma Prisma, migrations, RLS Postgres, isolation par foyer.
 - `packages/core` : chiffrement d'enveloppe, RBAC, limitation de débit, validation de fichiers, risque de connexion, plans/quotas.
@@ -12,7 +14,7 @@ Assistant administratif IA pour particuliers et familles.
 - `packages/config` : validation de l'environnement.
 - `apps/worker` : tâches planifiées sans contenu (BullMQ) : envoi des rappels d'échéance. `pnpm --filter @mon-agent-ia/worker start` (nécessite `REDIS_URL` et `DATABASE_SERVICE_URL`).
 - `packages/mail` : transport d'emails (Resend) et gabarits.
-- `apps/web` : Next.js 15 (landing, authentification Better Auth avec double authentification, onboarding, tableau de bord, sécurité du compte).
+- `apps/web` : Next.js 15 (landing, authentification Better Auth avec double authentification, onboarding, tableau de bord, analyse, courriers, famille, facturation, portail `/admin`).
 
 ## Développement local
 
