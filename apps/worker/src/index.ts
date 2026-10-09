@@ -7,6 +7,7 @@ import { log } from "./log.ts";
 import { createStripe } from "@mon-agent-ia/billing";
 import { purgeDueDeletions } from "./deletion.ts";
 import { dispatchReminders } from "./reminders.ts";
+import { purgeExpiredData } from "./retention.ts";
 
 /**
  * Worker : tâches planifiées SANS contenu. Les données des jobs BullMQ sont persistées dans Redis ;
@@ -27,6 +28,8 @@ async function main() {
   await queue.upsertJobScheduler("dispatch-reminders", { every: 60_000 }, { name: "dispatch-reminders", data: {} });
 
   await queue.upsertJobScheduler("purge-deletions", { every: 10 * 60_000 }, { name: "purge-deletions", data: {} });
+  // Durées de conservation des données d'exploitation : une purge chaque nuit (03 h 30 UTC), voir retention.ts et docs/05.
+  await queue.upsertJobScheduler("purge-retention", { pattern: "30 3 * * *", tz: "UTC" }, { name: "purge-retention", data: {} });
   const stripe = env.STRIPE_SECRET_KEY ? createStripe(env.STRIPE_SECRET_KEY) : null;
 
   const worker = new Worker(
@@ -41,6 +44,11 @@ async function main() {
         const stats = await purgeDueDeletions({ db, deleteBillingCustomer: stripe ? async (id) => void (await stripe.customers.del(id)) : undefined });
         if (stats.due) log("info", "suppressions de compte", stats);
         return stats;
+      }
+      if (job.name === "purge-retention") {
+        const r = await purgeExpiredData({ db });
+        log(r.failed.length ? "warn" : "info", "purge de rétention", { ...r.deleted, failed: r.failed.join(",") });
+        return { total: Object.values(r.deleted).reduce((a, b) => a + b, 0), failed: r.failed };
       }
       log("warn", "job inconnu", { name: job.name });
     },

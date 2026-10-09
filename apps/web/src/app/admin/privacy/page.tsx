@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Card, Stat, Table, dateFr, dateTimeFr } from "@/components/admin/bits";
+import { RETENTION_DAYS, RETENTION_POLICY, formatRetention } from "@mon-agent-ia/core";
+import { Card, Pill, Stat, Table, dateFr, dateTimeFr } from "@/components/admin/bits";
 import { dbService } from "@/lib/db";
 import { requireStaff } from "@/server/admin/guard";
 import { getPrivacyOverview } from "@/server/admin/metrics";
@@ -29,6 +30,22 @@ export default async function PrivacyAdminPage() {
             </tr>
           ))}
           {p.requests.length === 0 && <tr><td colSpan={5} className="py-8 text-center text-soft">Aucune suppression en attente.</td></tr>}
+        </Table>
+      </Card>
+      <Card title="Durées de conservation" subtitle="Appliquées chaque nuit par le worker. Les documents, leur texte et les courriers générés ne sont jamais conservés : cette liste ne concerne que des données d'exploitation.">
+        <p className="mb-4 flex flex-wrap items-center gap-2 text-[13px] text-soft">
+          {p.lastPurge
+            ? <>Dernière purge : {dateTimeFr(p.lastPurge.at)} · {p.lastPurge.deleted} ligne(s) supprimée(s) {p.lastPurge.failed.length > 0 && <Pill tone="danger">Échec : {p.lastPurge.failed.join(", ")}</Pill>}</>
+            : <>Aucune purge enregistrée pour l'instant : <Pill tone="warn">à vérifier que le worker tourne</Pill></>}
+        </p>
+        <Table head={["Donnée", "Durée", "Pourquoi"]}>
+          {RETENTION_POLICY.map((r) => (
+            <tr key={r.label}>
+              <td className="font-medium">{r.label}</td>
+              <td className="whitespace-nowrap">{r.keys.map((k) => formatRetention(RETENTION_DAYS[k])).join(" / ")}</td>
+              <td className="text-soft">{r.why}</td>
+            </tr>
+          ))}
         </Table>
       </Card>
     </div>

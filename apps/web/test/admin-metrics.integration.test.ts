@@ -130,6 +130,8 @@ run("portail admin : indicateurs (base isolée)", () => {
     await db.auditLog.createMany({ data: [
       { action: "account.exported", createdAt: ago(2) }, { action: "account.exported", createdAt: ago(20) }, { action: "account.exported", createdAt: ago(40) },
       { action: "household.records_erased", createdAt: ago(5) }, { action: "account.deletion_requested", createdAt: ago(6) }, { action: "account.deletion_requested", createdAt: ago(50) },
+      { action: "retention.purged", actorId: "worker", createdAt: ago(3), metadata: { loginEvents: 4, aiRuns: 2, auditLogs: 0, failed: "" } },
+      { action: "retention.purged", actorId: "worker", createdAt: ago(1), metadata: { loginEvents: 5, aiRuns: 1, auditLogs: 0, failed: "supportNotes,sessions" } },
     ] });
   });
 
@@ -275,6 +277,8 @@ run("portail admin : indicateurs (base isolée)", () => {
     expect(p.withdrawals).toBe(2);
     expect(p.exports).toBe(2);
     expect(p.erasures).toBe(2);
+    // Dernière purge de rétention : la plus récente, avec le total des lignes supprimées et les catégories en échec.
+    expect(p.lastPurge).toEqual({ at: ago(1), deleted: 6, failed: ["supportNotes", "sessions"] });
   });
 
   it("sécurité : échecs et connexions inhabituelles sur 7 j", async () => {

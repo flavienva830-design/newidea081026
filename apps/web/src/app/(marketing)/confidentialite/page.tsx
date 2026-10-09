@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { RETENTION_DAYS, formatRetention } from "@mon-agent-ia/core";
 import { LegalPage } from "@/components/marketing/legal";
 
 export const metadata: Metadata = { title: "Politique de confidentialité" };
@@ -27,7 +28,8 @@ export default function Page() {
       <h2>Intelligence artificielle</h2>
       <p>Le contenu de vos documents est transmis à un prestataire d'IA situé dans l'Union européenne uniquement pour produire votre analyse. Il n'est ni conservé par ce prestataire ni utilisé pour entraîner des modèles. [À confirmer contractuellement avec le prestataire retenu : conservation zéro et résidence des données dans l'Union européenne.]</p>
       <h2>Durée de conservation</h2>
-      <p>Documents : aucune conservation (traitement en mémoire). Données structurées : jusqu'à leur suppression par vous ou la clôture de votre compte, puis effacement sous [x] jours. Journaux de sécurité : [durée].</p>
+      <p>Documents : aucune conservation (traitement en mémoire). Données structurées : jusqu'à leur suppression par vous ou la clôture de votre compte, puis effacement définitif à l'issue du délai de rétractation de 14 jours (ou immédiatement sur demande) ; les sauvegardes sont purgées sous [x] jours.</p>
+      <p>Données d'exploitation, purgées automatiquement chaque nuit : historique de connexions, {formatRetention(RETENTION_DAYS.loginEvents)} (adresses IP et appareils conservés sous forme d'empreintes) ; appels techniques à l'IA, sans aucun contenu, {formatRetention(RETENTION_DAYS.aiRuns)} ; journal d'audit, {formatRetention(RETENTION_DAYS.auditLogs)} ; événements de paiement reçus, {formatRetention(RETENTION_DAYS.stripeEvents)} ; notifications, {formatRetention(RETENTION_DAYS.notificationsRead)} si lues et {formatRetention(RETENTION_DAYS.notificationsAny)} sinon ; invitations terminées, {formatRetention(RETENTION_DAYS.invitations)}.</p>
       <h2>Vos droits</h2>
       <p>Accès, rectification, effacement, limitation, portabilité, opposition et retrait du consentement : écrivez à [email]. Vous pouvez aussi saisir la CNIL (cnil.fr).</p>
       <h2>Sous-traitants</h2>

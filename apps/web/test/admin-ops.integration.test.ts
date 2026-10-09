@@ -188,6 +188,13 @@ run("portail admin : opérations et journal d'audit (base isolée)", () => {
     expect(decodeCursor("2026-03-01T10:00:00.000Z_'; DROP TABLE users;--")).toBeUndefined();
   });
 
+  it("RGPD : sans purge enregistrée, le portail l'indique (null) ; après une purge, il montre la dernière", async () => {
+    const { getPrivacyOverview } = await import("../src/server/admin/metrics");
+    expect((await getPrivacyOverview(db, new Date())).lastPurge).toBeNull();
+    await db.auditLog.create({ data: { actorId: "worker", action: "retention.purged", metadata: { loginEvents: 2, aiRuns: 0, failed: "" } } });
+    expect((await getPrivacyOverview(db, new Date())).lastPurge).toMatchObject({ deleted: 2, failed: [] });
+  });
+
   it("export RGPD : les notes de support de la personne concernée y figurent, sans l'identité de l'agent", async () => {
     const { buildExport } = await import("../src/server/export");
     await mk("subject");

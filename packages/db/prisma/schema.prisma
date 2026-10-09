@@ -250,6 +250,7 @@ model Session {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+  @@index([expiresAt])
   @@map("sessions")
 }
 
@@ -283,6 +284,7 @@ model Verification {
   updatedAt  DateTime @updatedAt
 
   @@index([identifier])
+  @@index([expiresAt])
   @@map("verifications")
 }
 
@@ -321,6 +323,7 @@ model LoginEvent {
   @@index([userId, createdAt])
   @@index([emailHash, createdAt])
   @@index([ipHash, createdAt])
+  @@index([createdAt])
   @@map("login_events")
 }
 
@@ -384,6 +387,7 @@ model Invitation {
 
   @@index([householdId])
   @@index([email])
+  @@index([expiresAt])
   @@map("invitations")
 }
 
@@ -599,6 +603,7 @@ model Notification {
   createdAt   DateTime   @default(now())
 
   @@index([userId, readAt, createdAt])
+  @@index([createdAt])
   @@map("notifications")
 }
 
@@ -664,6 +669,7 @@ model AiRun {
 
   @@index([householdId, createdAt])
   @@index([task, createdAt])
+  @@index([createdAt])
   @@map("ai_runs")
 }
 
@@ -696,6 +702,7 @@ model StripeEvent {
   processedAt DateTime?
   error       String?
 
+  @@index([receivedAt])
   @@map("stripe_events")
 }
 
@@ -730,6 +737,7 @@ model AuditLog {
   @@index([householdId, createdAt])
   @@index([actorId, createdAt])
   @@index([action, createdAt])
+  @@index([createdAt])
   @@map("audit_logs")
 }
 

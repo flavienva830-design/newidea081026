@@ -186,11 +186,16 @@ export async function getBilling(db: Db, now: Date) {
 
 export async function getPrivacyOverview(db: Db, now: Date) {
   const d30 = addDays(now, -30);
-  const [requests, withdrawals, exports_, erasures] = await Promise.all([
+  const [requests, withdrawals, exports_, erasures, purge] = await Promise.all([
     db.deletionRequest.findMany({ where: { status: { in: ["PENDING", "PROCESSING"] } }, orderBy: { scheduledFor: "asc" }, take: 100, select: { id: true, status: true, scheduledFor: true, createdAt: true, user: { select: { id: true, email: true } } } }),
     db.consent.count({ where: { granted: false, createdAt: { gte: d30 } } }),
     db.auditLog.count({ where: { action: "account.exported", createdAt: { gte: d30 } } }),
     db.auditLog.count({ where: { action: { in: ["household.records_erased", "account.deletion_requested"] }, createdAt: { gte: d30 } } }),
+    db.auditLog.findFirst({ where: { action: "retention.purged" }, orderBy: { createdAt: "desc" }, select: { createdAt: true, metadata: true } }),
   ]);
-  return { requests, withdrawals, exports: exports_, erasures };
+  // Dernière purge de rétention : date, nombre de lignes supprimées (comptes uniquement) et catégories en échec.
+  const meta = (purge?.metadata ?? null) as Record<string, unknown> | null;
+  const failed = typeof meta?.["failed"] === "string" && meta["failed"] ? (meta["failed"] as string).split(",") : [];
+  const deleted = meta ? Object.entries(meta).reduce((n, [k, v]) => (k !== "failed" && typeof v === "number" ? n + v : n), 0) : 0;
+  return { requests, withdrawals, exports: exports_, erasures, lastPurge: purge ? { at: purge.createdAt, deleted, failed } : null };
 }
